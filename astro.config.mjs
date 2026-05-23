@@ -94,6 +94,7 @@ export default defineConfig({
             { label: '延長料金計算ルール', slug: 'appendix/fee-calculation' },
             { label: 'URL直接アクセス', slug: 'appendix/url-patterns' },
             { label: 'メール送信の責任分界', slug: 'appendix/email-responsibility' },
+            { label: '自動キャンセルの仕組み', slug: 'appendix/auto-cancellation' },
           ],
         },
       ],
