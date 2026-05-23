@@ -69,6 +69,6 @@ Shopifyへ送信前であれば、再度配送料を入力し直すことがで�
 
 ## 関連
 
-- [請求書作成](10_invoice-create-new.md)
+- [請求書作成](/invoice-create-new/)
 - [請求一覧・入金処理](11_invoices-list.md)
 - [メール送信責任分界](appendix_d_email_responsibility.md)

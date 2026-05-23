@@ -25,7 +25,6 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
   </Card>
   <Card title="予約確認" icon="calendar">
     在庫・予約状況の確認
-    [予約状況照会 →](/reservation-inquiry/)
     [商品予約状況 →](/product-reservation-inquiry/)
   </Card>
   <Card title="出荷・配送" icon="truck">

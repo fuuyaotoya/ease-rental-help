@@ -52,9 +52,7 @@ sidebar:
 
 | 画面 | パス | 説明 |
 |------|------|------|
-| [予約状況照会](/reservation-inquiry/) | `/reservation-inquiry` | カレンダービューで予約状況確認 |
-| [商品予約状況照会](/product-reservation-inquiry/) | `/product-reservation-inquiry` | 商品別の予約期間一括表示 |
-| [予約状況一括照会](/reservation-bulk-inquiry/) | `/reservation-bulk-inquiry` | SKU一括で在庫・予約状況確認 |
+| [商品予約状況照会](/product-reservation-inquiry/) | `/product-reservation-inquiry` | 在庫・予約状況一括照会 + カレンダー + SKU検索 |
 
 ### フェーズD: 出荷・配送
 
@@ -73,7 +71,7 @@ sidebar:
 
 | 画面 | パス | 説明 |
 |------|------|------|
-| [請求書作成](/invoice-create-new/) | `/invoice-create-new` | 個別請求書の新規作成 |
+| [請求書作成](/invoice-create-new/) | `/invoice/create-new` | 個別請求書の新規作成 |
 | [請求一覧・入金処理](/invoices-list/) | `/invoices-list` | 請求書一覧・入金登録 |
 | [未入金一覧・入金処理](/payment-management/) | `/payment-management` | 未入金伝票の入金処理 |
 | [一括請求処理](/bulk-invoices/) | `/bulk-invoices` | 月次一括請求書作成 |

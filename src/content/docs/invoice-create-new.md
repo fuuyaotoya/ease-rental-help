@@ -6,7 +6,7 @@ sidebar:
 ---
 
 
-> **パス:** `/invoice-create-new`
+> **パス:** `/invoice/create-new`
 > **メニュー:** 請求・入金 > 請求書作成
 
 ## 概要
@@ -16,7 +16,7 @@ sidebar:
 ## アクセス方法
 
 - サイドバーから: **請求・入金 > 請求書作成**
-- URL直接: `/invoice-create-new`
+- URL直接: `/invoice/create-new`
 - 他画面から: 金額確定完了後のリンク、請求一覧の「領収書作成」ボタン
 
 ## 画面構成

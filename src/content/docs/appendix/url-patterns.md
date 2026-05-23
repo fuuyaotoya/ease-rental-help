@@ -39,12 +39,6 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 
 | URL                                            | 説明               | 使用場面           |
 | ---------------------------------------------- | ------------------ | ------------------ |
-| `/reservation-inquiry`                         | 予約状況カレンダー | 日別の予約確認     |
-| `/reservation-inquiry?date={yyyy-mm-dd}`       | 特定日の予約状況   | 指定日の予約確認   |
-| `/product-reservation-inquiry`                 | 商品別予約状況     | 商品単位の予約確認 |
-| `/product-reservation-inquiry?sku={sku}`       | SKU指定の予約状況  | 特定商品の予約確認 |
-| `/reservation-bulk-inquiry`                    | 一括予約照会       | 複数SKUの一括確認  |
-| `/reservation-bulk-inquiry?skus={sku1},{sku2}` | 複数SKU指定        | 特定商品群の確認   |
 
 ### 出荷・配送
 
@@ -66,8 +60,8 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 
 | URL                                  | 説明                 | 使用場面         |
 | ------------------------------------ | -------------------- | ---------------- |
-| `/invoice-create-new`                | 新規請求書作成       | 個別請求書作成   |
-| `/invoice-create-new?booking={id}`   | 伝票指定で請求書作成 | 特定伝票の請求書 |
+| `/invoice/create-new`                | 新規請求書作成       | 個別請求書作成   |
+| `/invoice/create-new?booking={id}`   | 伝票指定で請求書作成 | 特定伝票の請求書 |
 | `/invoices-list`                     | 請求書一覧           | 請求管理         |
 | `/invoices-list?status=sent`         | 未入金請求書一覧     | 入金催促対象確認 |
 | `/payment-management`                | 未入金一覧           | 入金処理         |

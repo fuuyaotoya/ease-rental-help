@@ -38,9 +38,7 @@ export default defineConfig({
         {
           label: '予約確認',
           items: [
-            { label: '予約状況照会', slug: 'reservation-inquiry' },
             { label: '商品予約状況照会', slug: 'product-reservation-inquiry' },
-            { label: '予約状況一括照会', slug: 'reservation-bulk-inquiry' },
           ],
         },
         {
