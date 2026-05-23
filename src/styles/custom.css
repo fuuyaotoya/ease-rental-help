@@ -1,0 +1,20 @@
+:root {
+  --sl-color-accent: #2563eb;
+  --sl-color-accent-high: #1d4ed8;
+  --sl-color-accent-low: #dbeafe;
+  --sl-content-width: 56rem;
+}
+
+html {
+  font-family: 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo', sans-serif;
+}
+
+/* Wider tables */
+table {
+  font-size: 0.9em;
+}
+
+/* Better code block styling */
+pre {
+  border-radius: 0.5rem;
+}

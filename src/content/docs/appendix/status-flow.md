@@ -1,0 +1,290 @@
+---
+title: 'ステータス遷移図'
+description: 'ステータス遷移図の操作方法と画面説明'
+sidebar:
+  order: 101
+---
+
+
+> **付録:** A
+> **主題:** 各エンティティのステータス遷移ルール
+
+---
+
+## 概要
+
+EASE Rentalシステムで使用する主要なステータスとその遷移ルールをまとめています。
+
+> **重要:** 以下のステータス値が正規値です。旧ドキュメントの値（DRAFT, CONFIRMED, PENDING等）は使用しません。
+
+---
+
+## BookingStatus（伝票ステータス）
+
+伝票の処理状態を表します。**Backend #1016 / Frontend #518 で11値に拡張**。
+
+### 遷移図
+
+```
+DRAFT ────────────────────────────────────────────────────────────┐
+    │ 確定                                                         │
+    ▼                                                             │
+CONFIRMED ────────────────────────────────────────────────────────┤
+    │ ピッキング完了                                               │
+    ▼                                                             │
+PROCESSING ───────────────────────────────────────────────────────┤
+    │ 出荷完了                                                     │
+    ▼                                                             │
+SHIPPED ──────────────────────────────────────────────────────────┤
+    │ 返却受領                                                     │
+    ▼                                                             │
+RETURNED ─────────────────────────────────────────────────────────┤
+    │ 金額確定                                                     │
+    ▼                                                             │
+AMOUNT_CONFIRMED ─────────────────────────────────────────────────┤
+    │                                                             │
+    │ 金額確定待ち/請求待ち/入金待ち（短絡も可）                    │
+    ├───────────────── PRICE_CONFIRM_PENDING ──────────────────────┤
+    │                                                             │
+    ├───────────────── BILLING_PENDING ────────────────────────────┤
+    │                                                             │
+    ├───────────────── PAYMENT_PENDING ────────────────────────────┤
+    │                                                             │
+    ▼ 入金完了                                                   │
+COMPLETED ─────────────────────────────────────────────────────────┘
+
+CANCELLED ◄──── 任意のステータスから遷移可能
+```
+
+### ステータス定義（11値）
+
+| ステータス              | 説明             | 遷移条件                           |
+| ----------------------- | ---------------- | ---------------------------------- |
+| `DRAFT`                 | 未確定           | 伝票作成時の初期状態（#1016）      |
+| `CONFIRMED`             | 予約確定         | DRAFT から確定時（#1016）          |
+| `PROCESSING`            | ピッキング完了   | 物理準備完了時（#1016）            |
+| `SHIPPED`               | 出荷済み         | 出荷完了時（#1016）                |
+| `RETURNED`              | 返却済み         | 返却受領時（#1016）                |
+| `AMOUNT_CONFIRMED`      | 金額確定         | 返却後金額確定時（#1016）          |
+| `PRICE_CONFIRM_PENDING` | 金額確定待ち     | 金額未確定時                       |
+| `BILLING_PENDING`       | 請求待ち         | 振込請求時                         |
+| `PAYMENT_PENDING`       | 入金待ち         | 現金/クレカ決済時                  |
+| `COMPLETED`             | 完了             | 入金確認完了後                     |
+| `CANCELLED`             | キャンセル       | 任意のタイミングからキャンセル可能 |
+
+> **SSOT**: `src/lib/constants.ts` BOOKING_STATUS / BOOKING_STATUS_LABELS
+> **遷移の真実**: Backend `status-transition.ts` `isValidStatusTransition()`
+
+---
+
+## PaymentStatus（支払ステータス）
+
+支払の状態を表します。
+
+### 遷移図
+
+```
+UNPAID ─────────────────────────────────────────────────────────┐
+    │                                                           │
+    │ 支払確認                                                   │
+    ▼                                                           │
+PENDING ────────────────────────────────────────────────────────┤
+    │                                                           │
+    │ 全額入金                                                   │
+    ▼                                                           │
+PAID ────────────────────────────────────────────────────────────┤
+    │                                                           │
+    │ 期限超過                                                   │
+    ▼                                                           │
+OVERDUE                                                          │
+                                                                 │
+CANCELLED ◄─────────────────────────────────────────────────────┘
+```
+
+### ステータス定義
+
+| ステータス  | 説明       | 遷移条件                   |
+| ----------- | ---------- | -------------------------- |
+| `unpaid`    | 未払い     | 伝票作成時の初期状態       |
+| `pending`   | 支払待ち   | 支払確認時                 |
+| `paid`      | 支払済み   | 全額入金確認後             |
+| `overdue`   | 過払い     | 支払期限超過時             |
+| `cancelled` | キャンセル | 支払がキャンセルされた場合 |
+
+> **SSOT**: `src/lib/constants.ts` PAYMENT_STATUS / PAYMENT_STATUS_LABELS
+
+---
+
+## InvoiceStatus（請求書ステータス）
+
+請求書の状態を表します。
+
+### 遷移図
+
+```
+DRAFT ───────────────────────────────────────────────────────────┐
+    │                                                            │
+    │ 保存完了                                                   │
+    ▼                                                            │
+PENDING ──────────────────────────────────────────────────────────┤
+    │                                                            │
+    │ 請求書送付                                                  │
+    ▼                                                            │
+SENT ──────────────────────────────────────────────────────────────┤
+    │                                                            │
+    │ 発行確定                                                    │
+    ▼                                                            │
+ISSUED ────────────────────────────────────────────────────────────┤
+    │                                                            │
+    │ 入金確認                                                    │
+    ▼                                                            │
+PAID ───────────────────────────────────────────────────────────────┤
+    │                                                            │
+    │ 無効化                                                      │
+    ▼                                                            │
+VOIDED                                                              │
+                                                                    │
+OVERDUE ◄── (期限超過時)                                            │
+                                                                    │
+CANCELLED ◄─────────────────────────────────────────────────────────┘
+```
+
+### ステータス定義
+
+| ステータス  | 説明         | 遷移条件                     |
+| ----------- | ------------ | ---------------------------- |
+| `draft`     | 下書き       | 請求書作成時の初期状態       |
+| `pending`   | 未送信       | 保存完了後                   |
+| `sent`      | 送付済み     | 請求書の送付完了後           |
+| `issued`    | 発行済み     | 発行確定後                   |
+| `paid`      | 支払済み     | 入金確認後                   |
+| `overdue`   | 支払期限超過 | 支払期限経過後               |
+| `cancelled` | キャンセル   | 請求書がキャンセルされた場合 |
+| `voided`    | 無効         | 請求書が無効化された場合     |
+
+> **SSOT**: `src/lib/constants.ts` INVOICE_STATUS / INVOICE_STATUS_LABELS
+
+---
+
+## ShippingStatus（配送ステータス）
+
+配送の状態を表します。
+
+### 遷移図
+
+```
+PENDING ──────────────────────────────────────────────────────────┐
+    │                                                             │
+    │ ピッキング開始                                               │
+    ▼                                                             │
+PREPARING ─────────────────────────────────────────────────────────┤
+    │                                                             │
+    │ 出荷完了                                                     │
+    ▼                                                             │
+IN_TRANSIT ────────────────────────────────────────────────────────┤
+    │                                                             │
+    │ 配送完了                                                     │
+    ▼                                                             │
+DELIVERED                                                          │
+                                                                   │
+CANCELLED ◄───────────────────────────────────────────────────────┘
+```
+
+### ステータス定義
+
+| ステータス   | 説明       | 遷移条件                   |
+| ------------ | ---------- | -------------------------- |
+| `PENDING`    | 待機中     | 伝票作成時の初期状態       |
+| `PREPARING`  | 準備中     | ピッキング開始後           |
+| `IN_TRANSIT` | 配送中     | 出荷完了後                 |
+| `DELIVERED`  | 配送完了   | 配送先に到着後             |
+| `CANCELLED`  | キャンセル | 配送がキャンセルされた場合 |
+
+---
+
+## ステータス遷移のベストプラクティス
+
+### 基本原則
+
+1. ステータスは原則として前方に進む（戻り遷移は最小限）
+2. `CANCELLED` は任意のステータスからの遷移が可能
+3. ステータス変更はユーザーの明示的な操作で行う
+
+### 例外ケース
+
+- `PENDING` から `UNPAID` への戻りは不可
+- `COMPLETED` / `PAID` / `DELIVERED` / `VOIDED` は終了状態（キャンセル以外への遷移不可）
+
+---
+
+## 3層設計アーキテクチャ（@Suiteからの再設計）
+
+> **背景**: @Suiteの単層7ステータスは、Backendで3層に分離再設計されています（Issue #943, #980, #1016）。
+> これはバグではなく、物理フロー・金銭フロー・返却フローを独立追跡するための設計判断です。
+> Backend #1016 で BookingStatus が 6→11値に拡張され、物理フロー（CONFIRMED/PROCESSING/SHIPPED/RETURNED）が BookingStatus レベルに統合されました。
+
+### 3層の全体図（#1016対応後）
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ BookingStatus（伝票全体フロー・11値）#1016                      │
+│ DRAFT → CONFIRMED → PROCESSING → SHIPPED → RETURNED            │
+│       → AMOUNT_CONFIRMED → BILLING_PENDING                      │
+│       → PAYMENT_PENDING → COMPLETED                             │
+│ 任意 → PRICE_CONFIRM_PENDING（確定待ち短絡）                    │
+│ 任意 → CANCELLED                                                │
+├─────────────────────────────────────────────────────────────────┤
+│ BookingItemStatus（明細物理フロー・8値）                        │
+│ pending → picking → picked → shipped → delivered → returned     │
+│         └→ cancelled                                            │
+│         └→ confirmed                                            │
+├─────────────────────────────────────────────────────────────────┤
+│ ReturnStatus（返却フロー・5値）                                 │
+│ PENDING → PARTIALLY_CONFIRMED → AMOUNT_CONFIRMED → COMPLETED   │
+│         └→ CANCELLED                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### @Suite（旧）→ Backend（現）対応表
+
+| @Suite 7ステータス | Backend での対応 | レイヤー | 備考 |
+|---|---|---|---|
+| `DRAFT`（下書き） | `DRAFT`（BookingStatus） | 伝票全体 | #1016 で復活。初期状態 |
+| `CONFIRMED`（確定） | `CONFIRMED`（BookingStatus） | 伝票全体 | #1016 で新設（旧COMPLETED相当ではない） |
+| `PROCESSING`（ピッキング済） | `PROCESSING`（BookingStatus） + `picking`/`picked`（BookingItemStatus） | 両方 | #1016 で BookingStatus にも追加 |
+| `SHIPPED`（出庫済） | `SHIPPED`（BookingStatus） + `shipped`（BookingItemStatus） | 両方 | #1016 で BookingStatus にも追加 |
+| `RETURNED`（返却済） | `RETURNED`（BookingStatus） + `returned`（BookingItemStatus） | 両方 | #1016 で BookingStatus にも追加 |
+| `AMOUNT_CONFIRMED`（金額確定） | `AMOUNT_CONFIRMED`（BookingStatus + ReturnStatus） | 両方 | #1016 で BookingStatus にも追加 |
+| `CANCELLED`（キャンセル） | `CANCELLED`（BookingStatus） + `cancelled`（BookingItemStatus） | 両方 | 伝票・明細両方でキャンセル可能 |
+
+### PROCESSING の意味変遷
+
+| | @Suite | Backend #943/#980 | Backend #1016（現行） |
+|---|---|---|---|
+| **初期状態** | DRAFT | PROCESSING | DRAFT |
+| **PROCESSING の意味** | ピッキング済 | 伝票作成時の初期状態 | ピッキング完了 |
+| **予約確定** | CONFIRMED | （なし） | CONFIRMED |
+
+> Issue #943 で `@default("DRAFT")` → `@default("PROCESSING")` に変更後、
+> Issue #1016 で `@default("DRAFT")` に戻り、11値に拡張。
+
+### レガシー値の自動変換
+
+```typescript
+// Backend status-transition.ts LEGACY_BOOKING_STATUS_MAP（#1016版）
+DRAFT → DRAFT
+PRICE_PENDING → DRAFT
+CONFIRMED → COMPLETED
+PAID → COMPLETED
+REFUNDED → COMPLETED
+CANCELLED → CANCELLED
+```
+
+---
+
+## 関連資料
+
+- [延長料金計算ルール](appendix_b_fee-calculation.md)
+- [URL直接アクセスパターン](appendix_c_url-patterns.md)
+- Backend Issue: iziz-system/ease-rental-backend#980
+- Frontend Issue: iziz-system/ease-rental-frontend#470
