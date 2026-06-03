@@ -9,6 +9,8 @@ sidebar:
 > **パス:** `/customer-management`
 > **メニュー:** 顧客管理 > 顧客管理
 
+![顧客管理画面](/images/customer-management.png)
+
 ## 概要
 
 顧客の登録・検索・閲覧・更新・削除を行う画面です。新規顧客は **この画面の「+ 新規登録」ボタン**から登録でき、登録と同時に Shopify とレンタルシステム（customer_master）の両方へ反映されます。Shopify Admin で直接登録した顧客は **「Shopify同期」ボタン**で取り込みます。

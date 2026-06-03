@@ -9,6 +9,8 @@ sidebar:
 > **パス:** `/product-reservation-inquiry`
 > **メニュー:** 予約管理 > 商品予約状況照会
 
+![商品予約状況照会画面](/images/product-reservation-inquiry.png)
+
 ## 概要
 
 商品ベースで在庫・予約状況を一括照会する画面です。3つのタブで異なる検索方法を提供します。

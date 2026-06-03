@@ -9,6 +9,8 @@ sidebar:
 > **パス:** `/shopify-data`
 > **区分:** 【開発者用】
 
+![Shopifyデータ画面](/images/shopify-data.png)
+
 ## 概要
 
 ShopifyとEASE Rentalシステム間のデータ同期を管理する画面です。リアルタイムのWebhook連携に加え、手動でのデータ同期や各データの確認が可能です。

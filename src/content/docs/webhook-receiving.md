@@ -9,6 +9,8 @@ sidebar:
 > **パス:** `/webhook-receiving`
 > **区分:** 【管理者用】
 
+![Webhook受信画面](/images/webhook-receiving.png)
+
 ## 概要
 
 ShopifyからのWebhook受信履歴を確認する画面です。システム連携の正常性確認や、トラブルシューティングに使用します。

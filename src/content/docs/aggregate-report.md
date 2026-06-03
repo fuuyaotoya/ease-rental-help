@@ -12,6 +12,8 @@ sidebar:
 > **パス:** `/aggregate-report`
 > **メニュー:** レポート > 集計表出力
 
+![集計表出力画面](/images/aggregate-report.png)
+
 ## 概要
 
 登録された伝票データから各種統計レポートを生成。CSVまたはPDF形式で、条件を指定して出力可能。

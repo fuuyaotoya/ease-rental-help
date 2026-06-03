@@ -7,6 +7,8 @@ sidebar:
 
 # EASE Rental 業務フロー
 
+![EASE Rental ダッシュボード画面](/images/dashboard.png)
+
 ## 業務フロー全体図
 
 ```
