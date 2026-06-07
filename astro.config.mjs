@@ -1,12 +1,12 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://ease-rental-help.onrender.com',
   integrations: [
-    sitemap(),
     starlight({
       title: 'EASE Rental',
       description: 'EASE Rental レンタル管理システムの操作マニュアル',
@@ -101,5 +101,7 @@ export default defineConfig({
       ],
       customCss: ['./src/styles/custom.css'],
     }),
+    mdx(),
+    sitemap(),
   ],
 });
