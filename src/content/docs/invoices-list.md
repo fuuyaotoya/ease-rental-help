@@ -311,6 +311,8 @@ Backendのcronジョブ（`InvoiceReminderCronService`）が毎日自動で処�
 | 対象           | 個別請求書 + 統合請求書（銀行振込のみ）     | -                                             |
 | 無効化         | `INVOICE_REMINDER_ENABLED=false` で停止可能 | -                                             |
 
+> **クレカ後発料金も督促対象（#2007）:** 返却時の延長料金や追加調整をShopify Draft Order（DO②/③）として送信したクレジットカード伝票も、未入金追跡の対象になります。支払期日（due_date）は請求書作成時に自動計算されます。
+
 **督促フロー（現行設定: `REMINDER_INTERVALS=1,7,10`）:**
 
 ```
