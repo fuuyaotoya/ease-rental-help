@@ -6,6 +6,8 @@ sidebar:
 ---
 
 
+![マイページ画面](/images/my-page/main.png)
+
 > **パス:** `/my-page`
 > **メニュー:** ユーザーメニュー > マイページ
 
