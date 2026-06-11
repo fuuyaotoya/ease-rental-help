@@ -3,13 +3,29 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import remarkDevDirective from './src/plugins/remark-dev-directive.mjs';
 
 export default defineConfig({
   site: 'https://ease-rental-help.onrender.com',
+  markdown: {
+    remarkPlugins: [remarkDevDirective],
+  },
   integrations: [
     starlight({
       title: 'EASE Rental',
       description: 'EASE Rental レンタル管理システムの操作マニュアル',
+      components: {
+        Sidebar: './src/components/Sidebar.astro',
+      },
+      head: [
+        {
+          // Apply the dev-mode class before paint to avoid a flash of
+          // developer-only content on load.
+          tag: 'script',
+          content:
+            "try{if(localStorage.getItem('ease-help-dev-mode')==='1')document.documentElement.classList.add('dev-mode')}catch(e){}",
+        },
+      ],
       defaultLocale: 'root',
       locales: {
         root: { label: '日本語', lang: 'ja' },

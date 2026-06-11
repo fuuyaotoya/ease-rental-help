@@ -18,3 +18,65 @@ table {
 pre {
   border-radius: 0.5rem;
 }
+
+/* --- Developer-only content (`:::dev` blocks) --- */
+/* Hidden unless developer mode is on (dev-mode class on <html>). */
+:root:not(.dev-mode) .dev-only {
+  display: none;
+}
+
+.dev-only {
+  border-left: 3px solid var(--sl-color-accent);
+  background: var(--sl-color-accent-low);
+  border-radius: 0.4rem;
+  padding: 0.5rem 1rem 0.75rem;
+  margin: 1rem 0;
+}
+
+.dev-only::before {
+  content: '開発者向け';
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--sl-color-white);
+  background: var(--sl-color-accent);
+  border-radius: 0.25rem;
+}
+
+.dev-only > :first-of-type {
+  margin-top: 0;
+}
+
+/* --- Developer-mode toggle in the sidebar --- */
+.dev-mode-toggle {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+.dev-mode-toggle__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: var(--sl-text-sm);
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+.dev-mode-toggle__input {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--sl-color-accent);
+}
+
+.dev-mode-toggle__hint {
+  margin: 0.35rem 0 0 1.5rem;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}

@@ -1,0 +1,9 @@
+---
+// Override of Starlight's Sidebar: render the default navigation, then append
+// the developer-mode toggle below the manual links.
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+import DevModeToggle from './DevModeToggle.astro';
+---
+
+<Default><slot /></Default>
+<DevModeToggle />

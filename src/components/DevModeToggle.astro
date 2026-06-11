@@ -1,0 +1,36 @@
+---
+// Developer-mode toggle, rendered at the bottom of the sidebar.
+// Toggles the `dev-mode` class on <html> and persists the choice in
+// localStorage. `:::dev` blocks (class `dev-only`) are shown only when on.
+---
+
+<div class="dev-mode-toggle">
+  <label class="dev-mode-toggle__label">
+    <input type="checkbox" class="dev-mode-toggle__input" id="dev-mode-checkbox" />
+    <span class="dev-mode-toggle__text">開発者モード</span>
+  </label>
+  <p class="dev-mode-toggle__hint">開発者向けの補足を表示します</p>
+</div>
+
+<script is:inline>
+  (() => {
+    const KEY = 'ease-help-dev-mode';
+    const root = document.documentElement;
+    const checkbox = document.getElementById('dev-mode-checkbox');
+    if (!checkbox) return;
+
+    const apply = (on) => {
+      root.classList.toggle('dev-mode', on);
+      checkbox.checked = on;
+    };
+
+    // Initialize from storage (head script may have already set the class).
+    apply(localStorage.getItem(KEY) === '1' || root.classList.contains('dev-mode'));
+
+    checkbox.addEventListener('change', () => {
+      const on = checkbox.checked;
+      localStorage.setItem(KEY, on ? '1' : '0');
+      apply(on);
+    });
+  })();
+</script>
