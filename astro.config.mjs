@@ -105,6 +105,31 @@ export default defineConfig({
           ],
         },
         {
+          label: 'テーマカスタマイズ',
+          items: [
+            { label: 'テーマカスタマイズ概要', slug: 'theme-customize' },
+            { label: 'トップページ', slug: 'theme-customize/homepage' },
+            { label: 'コレクションページ', slug: 'theme-customize/collection' },
+            { label: '商品ページ', slug: 'theme-customize/product' },
+            { label: 'スタジオページ', slug: 'theme-customize/studio' },
+            { label: 'スタジオ料金一覧', slug: 'theme-customize/studio-pricing' },
+            { label: '展示会ページ', slug: 'theme-customize/exhibition' },
+            { label: 'About/会社情報', slug: 'theme-customize/about' },
+            { label: 'レンタルトップ', slug: 'theme-customize/rental-top' },
+            { label: 'カートページ', slug: 'theme-customize/cart' },
+            { label: 'マイアカウント', slug: 'theme-customize/my-account' },
+          ],
+        },
+        {
+          label: 'Shopify管理画面',
+          items: [
+            { label: '注文一覧（Orders）', slug: 'shopify-admin/orders' },
+            { label: '下書き注文（Draft Orders）', slug: 'shopify-admin/draft-orders' },
+            { label: '顧客（Customers）', slug: 'shopify-admin/customers' },
+            { label: '商品管理（Products）', slug: 'shopify-admin/products' },
+          ],
+        },
+        {
           label: '付録',
           items: [
             { label: 'ステータス遷移図', slug: 'appendix/status-flow' },
