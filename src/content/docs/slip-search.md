@@ -59,6 +59,22 @@ sidebar:
 | **今週** | 今週のレンタル伝票 |
 | **延滞** | 返却が遅れている伝票 |
 
+:::dev
+#### ステータスの内部値
+
+画面の表示名と内部ステータス値の対応（`SLIP_SEARCH_STATUS_LABELS`）:
+
+| 表示名 | 内部値 | 備考 |
+|--------|--------|------|
+| 処理中 | `PROCESSING` | ピッキング完了後 |
+| 金額確認待ち | `PRICE_CONFIRM_PENDING` | 返却後の金額調整中 |
+| 請求待ち | `BILLING_PENDING` | 銀行振込など請求書発行待ち |
+| 入金待ち | `PAYMENT_PENDING` | 請求書発行済・入金確認待ち |
+| 完了 | `COMPLETED` | 入金確認済み |
+
+全11ステータスの完全一覧は [ステータス遷移図](/appendix/status-flow/) を参照。
+:::
+
 ### ステップ2: 検索結果を確認する
 
 検索結果はテーブルで一覧表示されます。
@@ -123,6 +139,67 @@ sidebar:
 
 - 個別にチェックを入れる
 - ヘッダーのチェックボックスで現在のページを全選択
+
+---
+
+:::dev
+## API・URLパラメータ仕様
+
+### エンドポイント
+
+```
+GET /bookings/search
+```
+
+### クエリパラメータ
+
+| パラメータ | 対応するUI | 例 |
+|-----------|-----------|-----|
+| `keyword` | キーワード | `keyword=山田` |
+| `status` | ステータス | `status=PROCESSING` |
+| `booking_type` | 予約種別 | `booking_type=normal_order` |
+| `slip_number` | 伝票番号 | `slip_number=B-1234` |
+| `start_date_from` | 開始日（From） | `start_date_from=2026-04-01` |
+| `start_date_to` | 開始日（To） | `start_date_to=2026-04-30` |
+| `end_date_from` | 返却日（From） | `end_date_from=2026-04-01` |
+| `end_date_to` | 返却日（To） | `end_date_to=2026-04-30` |
+| `payment_status` | 残高フィルタ | `UNPAID` / `PAID` |
+| `payment_method` | 支払方法 | `payment_method=credit_card` |
+| `payment_date_from` | 入金日（From） | `payment_date_from=2026-04-01` |
+| `payment_date_to` | 入金日（To） | `payment_date_to=2026-04-30` |
+| `amount_min` | 金額（下限） | `amount_min=10000` |
+| `amount_max` | 金額（上限） | `amount_max=50000` |
+| `staff_name` | 担当者名 | `staff_name=田中` |
+| `invoice_number` | 請求書番号 | `invoice_number=INV-001` |
+| `billing_name` | 請求先名 | `billing_name=株式会社〇〇` |
+| `company` | 会社名 | `company=サンプル株式会社` |
+| `phone_number` | 電話番号 | `phone_number=03-1234-5678` |
+| `company_kana` | 会社名カナ | `company_kana=サンプル` |
+| `customer_name_kana` | 担当者名カナ | `customer_name_kana=ヤマダ` |
+| `product_name_kana` | 商品名カナ | `product_name_kana=テント` |
+| `page` | ページ番号 | `page=2` |
+| `limit` | 1ページあたり件数 | `limit=20`（固定） |
+| `sort_by` | 並び順フィールド | `sort_by=created_at` |
+| `sort_order` | 並び順（昇順/降順） | `sort_order=desc` |
+
+### URLで検索条件を共有する
+
+検索条件はURLに保持されるため、ブラウザのブックマークに登録すれば同じ条件でいつでも開けます。
+
+例: 2026年4月の処理中伝票を検索
+```
+/slip-search?status=PROCESSING&start_date_from=2026-04-01&start_date_to=2026-04-30
+```
+
+### かんたん検索のパラメータ
+
+| ボタン | 設定されるパラメータ |
+|--------|-------------------|
+| 本日 | `start_date_from=<今日>&start_date_to=<今日>` |
+| 処理中 | `status=PROCESSING` |
+| 今週 | `start_date_from=<月曜日>&start_date_to=<日曜日>` |
+| 延滞 | `end_date_to=<昨日>&status=PROCESSING` |
+:::
 
 ---
 
