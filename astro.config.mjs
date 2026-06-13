@@ -78,6 +78,7 @@ export default defineConfig({
             { label: '未入金一覧・入金処理', slug: 'payment-management' },
             { label: '返金処理', slug: 'refund' },
             { label: '一括請求処理', slug: 'bulk-invoices' },
+            { label: '会社まとめ請求', slug: 'consolidated-invoices' },
             { label: '配送料確定・Shopify請求', slug: 'delivery-fee-shopify-flow' },
           ],
         },
