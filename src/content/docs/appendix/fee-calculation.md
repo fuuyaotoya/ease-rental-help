@@ -103,7 +103,9 @@ function calculateDailyRate(basePrice, days) {
 
 レンタル開始日を基準に、キャンセル実行日の何日前かにより料率が決まります。
 
+:::dev
 > **SSOT:** Backend `src/modules/bookings/utils/cancellation-fee.ts` / Frontend `src/lib/utils/fee-calculator.ts`
+:::
 
 ### 料率表
 
@@ -131,6 +133,7 @@ function calculateDailyRate(basePrice, days) {
 
 ---
 
+:::dev
 ## 実装詳細
 
 ### 実装ファイル
@@ -157,6 +160,7 @@ function calculateDailyRate(basePrice, days) {
 
 3. **上限なし**
    - 7日目以降は10%ずつ増加し続ける（上限なし）
+:::
 
 ---
 

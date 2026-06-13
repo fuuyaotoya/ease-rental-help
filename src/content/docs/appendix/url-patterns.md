@@ -96,17 +96,25 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 
 | URL                       | 説明              | 対象ユーザー |
 | ------------------------- | ----------------- | ------------ |
-| `/shopify-data`           | Shopifyデータ管理 | 開発者       |
-| `/shopify-data/customers` | Shopify顧客データ | 開発者       |
 | `/products`               | 商品管理          | 管理者       |
-| `/shopify-data/orders`    | Shopify注文データ | 開発者       |
 | `/webhook-receiving`      | Webhook受信ログ   | 管理者       |
 | `/my-page`                | マイページ        | 全ユーザー   |
+
+:::dev
+#### 開発者向け（Shopifyデータ管理）
+
+| URL                       | 説明              |
+| ------------------------- | ----------------- |
+| `/shopify-data`           | Shopifyデータ管理 |
+| `/shopify-data/customers` | Shopify顧客データ |
+| `/shopify-data/orders`    | Shopify注文データ |
+:::
 
 ---
 
 ## URLパターンの詳細
 
+:::dev
 ### ステータス値
 
 URLパラメータで使用するステータス値の一覧です。
@@ -153,6 +161,7 @@ PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 ?skus=SKU001,SKU002,SKU003
 ?status=PROCESSING,BILLING_PENDING
 ```
+:::
 
 ---
 

@@ -5,6 +5,9 @@ sidebar:
   order: 101
 ---
 
+> **💡 運用者向け:** 伝票の状態は「伝票ステータス」「支払ステータス」「配送ステータス」「返却ステータス」の4つの独立した軸で管理され、画面では「処理中 / 金額確認待ち / 請求待ち / 入金待ち / 完了」で表示されます。各ステータスの内部値・遷移ルール・3層設計の技術詳細は開発者モード（ページ右上のトグル）を ON にしてご確認ください。
+
+:::dev
 
 > **付録:** A
 > **主題:** 各エンティティのステータス遷移ルール
@@ -304,3 +307,4 @@ CANCELLED → CANCELLED
 - [URL直接アクセスパターン](appendix_c_url-patterns.md)
 - Backend Issue: iziz-system/ease-rental-backend#980
 - Frontend Issue: iziz-system/ease-rental-frontend#470
+:::
