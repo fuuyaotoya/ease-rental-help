@@ -5,8 +5,10 @@ sidebar:
   order: 53
 ---
 
+:::dev
 > **パス:** `/booking-compact?id=...`（伝票編集画面）> 「料金・支払」セクション
 > **メニュー:** 伝票検索 > 伝票を開く > 料金・支払 > 「返金を記録」
+:::
 
 ![返金を記録モーダル](/images/refund.png)
 
@@ -118,6 +120,7 @@ sidebar:
 
 ## 関連ページ
 
+- [金額変更時の精算（返金・追加請求）](/appendix/amount-change-settlement/) — 商品削除・追加・価格変更後にどう精算するかの全体フロー
 - [貸し出し伝票作成](/booking-compact/) — 返金ボタンがある伝票編集画面
 - [請求一覧・入金処理](/invoices-list/) — 請求・入金の管理
 - [未入金一覧・入金処理](/payment-management/) — 入金処理

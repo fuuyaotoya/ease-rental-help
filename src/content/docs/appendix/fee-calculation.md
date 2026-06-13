@@ -186,5 +186,6 @@ A: ビジネスルールとして、6日間のレンタルで基本料金の2倍
 
 ## 関連資料
 
+- [金額変更時の精算（返金・追加請求）](/appendix/amount-change-settlement/) — 決済済み伝票で商品を削除・追加・価格変更したときの返金/追加請求フロー
 - [ステータス遷移図](appendix_a_status-flow.md)
 - [URL直接アクセスパターン](appendix_c_url-patterns.md)

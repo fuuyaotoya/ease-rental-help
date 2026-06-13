@@ -134,6 +134,7 @@ export default defineConfig({
           items: [
             { label: 'ステータス遷移図', slug: 'appendix/status-flow' },
             { label: '延長料金計算ルール', slug: 'appendix/fee-calculation' },
+            { label: '金額変更時の精算（返金・追加請求）', slug: 'appendix/amount-change-settlement' },
             { label: 'URL直接アクセス', slug: 'appendix/url-patterns' },
             { label: 'メール送信の責任分界', slug: 'appendix/email-responsibility' },
             { label: '自動キャンセルの仕組み', slug: 'appendix/auto-cancellation' },
