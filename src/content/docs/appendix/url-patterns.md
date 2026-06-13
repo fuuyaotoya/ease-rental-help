@@ -101,7 +101,7 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 | `/my-page`                | マイページ        | 全ユーザー   |
 
 :::dev
-#### 開発者向け（Shopifyデータ管理）
+##### 開発者向け（Shopifyデータ管理）
 
 | URL                       | 説明              |
 | ------------------------- | ----------------- |
@@ -115,35 +115,35 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 ## URLパターンの詳細
 
 :::dev
-### ステータス値
+##### ステータス値
 
 URLパラメータで使用するステータス値の一覧です。
 
-#### BookingStatus
+###### BookingStatus
 
 ```
 PROCESSING, BILLING_PENDING, PAYMENT_PENDING, COMPLETED, CANCELLED
 ```
 
-#### PaymentStatus
+###### PaymentStatus
 
 ```
 UNPAID, PARTIAL, PAID, REFUNDED, CANCELLED
 ```
 
-#### InvoiceStatus
+###### InvoiceStatus
 
 ```
 DRAFT, CONFIRMED, SENT, PAID, REFUNDED, CANCELLED
 ```
 
-#### ShippingStatus
+###### ShippingStatus
 
 ```
 PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 ```
 
-### 日付フォーマット
+##### 日付フォーマット
 
 日付パラメータは ISO 8601 形式（YYYY-MM-DD）を使用します。
 
@@ -153,7 +153,7 @@ PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 誤: ?date=02-21-2026
 ```
 
-### 複数値の指定
+##### 複数値の指定
 
 カンマ区切りで複数の値を指定できる場合があります。
 
