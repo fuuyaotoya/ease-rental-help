@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/bulk-invoices`
 > **メニュー:** 請求・入金 > 一括請求処理
+:::
 
 ![月次請求書一括処理画面](/images/bulk-invoices.png)
 

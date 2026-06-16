@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/shopify-data`
 > **区分:** 【開発者用】
+:::
 
 ![Shopifyデータ画面](/images/shopify-data.png)
 

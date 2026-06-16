@@ -14,8 +14,10 @@ sidebar:
      対象FEパス: src/app/(admin)/reports/delivery-company-sales/page.tsx
      ============================================================ -->
 
+:::dev
 > **パス:** `/reports/delivery-company-sales`
 > **メニュー:** レポート > 集計表出力 > 配送業者別売上一覧表
+:::
 
 ## 概要
 

@@ -51,6 +51,14 @@ pre {
   margin-top: 0;
 }
 
+/* --- Developer-only sidebar groups (data-dev-only) --- */
+/* Badge shown next to group label when dev-mode is on. */
+html.dev-mode [data-dev-only] > a::after,
+html.dev-mode [data-dev-only] > span::after {
+  content: ' 🔧';
+  font-size: 0.75em;
+}
+
 /* --- Developer-mode toggle in the sidebar --- */
 .dev-mode-toggle {
   margin-top: 1.5rem;

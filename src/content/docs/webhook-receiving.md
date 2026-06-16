@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/webhook-receiving`
 > **区分:** 【管理者用】
+:::
 
 ![Webhook受信画面](/images/webhook-receiving.png)
 

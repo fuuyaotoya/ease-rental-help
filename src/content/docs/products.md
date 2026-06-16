@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/products`
 > **メニュー:** 在庫管理 > 商品
+:::
 
 ![商品管理画面](/images/products.png)
 

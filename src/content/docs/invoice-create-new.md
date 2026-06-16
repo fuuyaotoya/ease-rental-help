@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/invoice/create-new`
 > **メニュー:** 請求・入金 > 請求書作成
+:::
 
 ![請求書作成画面](/images/invoice-create-new.png)
 

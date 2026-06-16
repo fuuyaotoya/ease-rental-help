@@ -8,8 +8,10 @@ sidebar:
 
 ![マイページ画面](/images/my-page/main.png)
 
+:::dev
 > **パス:** `/my-page`
 > **メニュー:** ユーザーメニュー > マイページ
+:::
 
 ## 概要
 

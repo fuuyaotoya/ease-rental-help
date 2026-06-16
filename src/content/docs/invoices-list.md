@@ -6,8 +6,10 @@ sidebar:
 ---
 
 
+:::dev
 > **パス:** `/invoices-list`
 > **メニュー:** 請求・入金 > 請求書・領収書管理
+:::
 
 ![請求書・領収書管理画面](/images/invoices-list.png)
 

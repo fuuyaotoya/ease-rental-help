@@ -8,11 +8,13 @@ sidebar:
 
 ![ダッシュボード画面](/images/dashboard/main.png)
 
+:::dev
 > ⚠️ **現在非表示** — サイドバーに表示されていません。直接URL `/dashboard` でアクセス可能です。
 > **復活条件:** Backend ダッシュボードAPI新設時
 
 > **パス:** `/dashboard`
 > **メニュー:** ダッシュボード
+:::
 
 ## 概要
 

@@ -1,9 +1,55 @@
 ---
 // Override of Starlight's Sidebar: render the default navigation, then append
 // the developer-mode toggle below the manual links.
+// Developer-only sidebar groups ("管理者用", "Shopify管理画面") are hidden
+// unless the `dev-mode` class is present on <html>.
 import Default from '@astrojs/starlight/components/Sidebar.astro';
 import DevModeToggle from './DevModeToggle.astro';
 ---
 
 <Default><slot /></Default>
 <DevModeToggle />
+
+<script is:inline>
+  (() => {
+    const DEV_GROUPS = ['管理者用', 'Shopify管理画面'];
+
+    function applyDevSidebar(devMode) {
+      const root = document.querySelector('.sidebar');
+      if (!root) return;
+
+      const topItems = root.querySelectorAll(':scope > ul > li');
+      topItems.forEach((li) => {
+        // Group label is inside the first <a> or <span> child of the top-level <li>.
+        const label = li.querySelector(':scope > a, :scope > span');
+        if (!label) return;
+        const text = (label.textContent || '').trim();
+        if (DEV_GROUPS.includes(text)) {
+          li.setAttribute('data-dev-only', '');
+          li.style.display = devMode ? '' : 'none';
+        }
+      });
+    }
+
+    function init() {
+      const devMode = document.documentElement.classList.contains('dev-mode');
+      applyDevSidebar(devMode);
+
+      // Re-apply when dev-mode class changes.
+      const observer = new MutationObserver(() => {
+        applyDevSidebar(document.documentElement.classList.contains('dev-mode'));
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+    document.addEventListener('astro:page-load', init);
+  })();
+</script>
