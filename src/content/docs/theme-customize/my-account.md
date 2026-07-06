@@ -42,6 +42,7 @@ sidebar:
 | `main-addresses` | 住所管理 |
 | `main-login` | ログインフォーム |
 | `main-register` | 新規登録フォーム |
+| `main-rental-edit` | レンタル予約内容の変更（商品の期間変更・削除・キャンセル料試算・Issue #2259 / Theme #569） |
 
 ---
 
@@ -53,6 +54,17 @@ sidebar:
 予約ステータスの表示条件：
 - `status` フィールドに基づいてタブ表示（未払い / 支払い済み 等）
 - 詳細はテーマの `sections/main-account.liquid` を参照
+
+**レンタル予約の編集機能（Issue #2259 / Theme #569）:**
+
+決済前のレンタル予約については、顧客がマイページから内容を変更できる専用ページ（`/pages/rental-edit?slip={伝票番号}`）を提供しています。`sections/main-rental-edit.liquid` + `assets/rental-edit-page.js` が以下のバックエンドAPIを呼び出します:
+
+- 予約内容の取得（B1: `GET /bookings/by-slip`）
+- 商品の削除・期間変更（B2: `DELETE` / `PATCH /bookings/:id/items/:itemId`）
+- キャンセル料の試算（B3: `POST /bookings/:id/items/:itemId/cancellation-fee/estimate`）
+
+> ※決済後（クレカ決済済み）の伝票では編集できません。
+> ※商品の**追加**（Issue #2265）はバックエンドAPI側で対応済みですが、テーマ側のUIは未実装です（将来拡張）。
 :::
 
 ---

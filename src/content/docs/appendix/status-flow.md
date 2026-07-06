@@ -19,7 +19,7 @@ tableOfContents: false
 
 EASE Rentalシステムで使用する主要なステータスとその遷移ルールをまとめています。
 
-> **重要:** 以下のステータス値が正規値です。旧ドキュメントの値（DRAFT, CONFIRMED, PENDING等）は使用しません。
+> **重要:** 以下のステータス値が正規値です。旧ドキュメントの値（DRAFT, CONFIRMED, PENDING等）は使用しません。また `AWAITING_RETURN`（返却待ち）は旧資料に登場しますが、**現システムの enum/DB には存在しない幻影の状態**です（返却待ちは `PENDING` で表します）。
 
 ### ★ 4軸ステータスの独立性（最重要）
 
@@ -30,7 +30,7 @@ EASE Rentalシステムで使用する主要なステータスとその遷移ル
 | ① 伝票ステータス | 金銭・業務フロー | 下書き → 確定 → 処理中 → 金額確認待ち → 金額確定 → 請求待ち → 入金待ち → 完了 |
 | ② ピッキング状態 | 物理準備フロー | （なし）→ ピッキング中 → ピッキング完了 |
 | ③ 出荷状態 | 配送フロー | 未発送 → 発送済み → 配達済み |
-| ④ 返却状態 | 返却フロー | 未返却 → 一部返却受付 → 返却受付済み → 金額確定済み → 返却完了 |
+| ④ 返却状態 | 返却フロー | 未返却 → 一部返却受付 → 返却受付済み → 一部金額確定 → 金額確定済み → 返却完了 |
 
 **重要な仕様:**
 - ピッキング・出荷を行っても **①伝票ステータスは変化しません**（②③が別軸で進む）
@@ -99,39 +99,34 @@ CANCELLED ◄──── 任意のステータスから遷移可能
 
 ## PaymentStatus（支払ステータス）
 
-支払の状態を表します。
+伝票の**支払（入金・返金）**の状態を表します。**InvoiceStatus（請求書ステータス）とは別の軸**なので混同しないでください（`pending` / `sent` / `overdue` 等は InvoiceStatus 側の値です）。
 
 ### 遷移図
 
 ```
-UNPAID ─────────────────────────────────────────────────────────┐
-    │                                                           │
-    │ 支払確認                                                   │
-    ▼                                                           │
-PENDING ────────────────────────────────────────────────────────┤
-    │                                                           │
-    │ 全額入金                                                   │
-    ▼                                                           │
-PAID ────────────────────────────────────────────────────────────┤
-    │                                                           │
-    │ 期限超過                                                   │
-    ▼                                                           │
-OVERDUE                                                          │
-                                                                 │
-CANCELLED ◄─────────────────────────────────────────────────────┘
+unpaid ─────────► partially_paid ─────────► paid
+                                             │
+                                             │ 返金発生
+                                             ▼
+                                  partially_refunded ─────► refunded
 ```
 
-### ステータス定義
+> 返金は `paid`（全額入金）以降のみ発生しうるため、`unpaid` からいきなり `refunded` には遷移しません。
 
-| ステータス  | 説明       | 遷移条件                   |
-| ----------- | ---------- | -------------------------- |
-| `unpaid`    | 未払い     | 伝票作成時の初期状態       |
-| `pending`   | 支払待ち   | 支払確認時                 |
-| `paid`      | 支払済み   | 全額入金確認後             |
-| `overdue`   | 過払い     | 支払期限超過時             |
-| `cancelled` | キャンセル | 支払がキャンセルされた場合 |
+### ステータス定義（5値）
 
-> **SSOT**: `src/lib/constants.ts` PAYMENT_STATUS / PAYMENT_STATUS_LABELS
+| ステータス            | 説明             | 遷移条件                                               |
+| --------------------- | ---------------- | ------------------------------------------------------ |
+| `unpaid`              | 未払い           | 伝票作成時の初期状態                                   |
+| `partially_paid`      | 一部入金         | 一部入金の記録時（※1）                                 |
+| `paid`                | 支払済み（全額） | 全額入金確認後                                         |
+| `partially_refunded`  | 一部返金         | 全額入金後に一部返金が記録された場合                   |
+| `refunded`            | 返金済み（全額） | 全額入金後に全額返金が記録された場合                   |
+
+> ※1 **画面の「一括入金処理」は全額入金のみに対応**していますが、Shopify の部分決済や、金額確定時の total 増加（延長料金の追加など）により、一度 `paid` になった伝票が `partially_paid` に差し戻ることがあります（Issue #2249）。この場合、伝票は未入金一覧に再表示されます。
+
+> **SSOT**: Backend `src/modules/bookings/status-transition.ts` `PaymentStatus` / `isValidPaymentStatusTransition()`
+> **注意**: `overdue`（期限超過）は **InvoiceStatus** 側の値です。PaymentStatus には期限超過に相当する値はありません。
 
 ---
 
@@ -259,9 +254,9 @@ CANCELLED ◄──────────────────────�
 │         └→ cancelled                                            │
 │         └→ confirmed                                            │
 ├─────────────────────────────────────────────────────────────────┤
-│ ReturnStatus（返却フロー・5値）                                 │
-│ PENDING → PARTIALLY_CONFIRMED → AMOUNT_CONFIRMED → COMPLETED   │
-│         └→ CANCELLED                                            │
+│ ReturnStatus（返却フロー・6値）                                 │
+│ PENDING → PARTIALLY_RECEIVED → RECEIVED → PARTIALLY_CONFIRMED  │
+│        → AMOUNT_CONFIRMED → COMPLETED                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -304,8 +299,8 @@ CANCELLED → CANCELLED
 
 ## 関連資料
 
-- [延長料金計算ルール](appendix_b_fee-calculation.md)
-- [URL直接アクセスパターン](appendix_c_url-patterns.md)
+- [延長料金計算ルール](/appendix/fee-calculation/)
+- [URL直接アクセスパターン](/appendix/url-patterns/)
 - Backend Issue: iziz-system/ease-rental-backend#980
 - Frontend Issue: iziz-system/ease-rental-frontend#470
 :::
