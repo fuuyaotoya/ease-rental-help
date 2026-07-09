@@ -103,6 +103,7 @@ export default defineConfig({
             { label: 'Webhook受信', slug: 'webhook-receiving' },
             { label: 'ダッシュボード', slug: 'dashboard' },
             { label: '集計表出力', slug: 'aggregate-report' },
+            { label: '自動送信メール一覧', slug: 'email-notifications' },
           ],
         },
         {
