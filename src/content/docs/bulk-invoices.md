@@ -11,6 +11,8 @@ sidebar:
 > **メニュー:** 請求・入金 > 一括請求処理
 :::
 
+> **運用変更（#1215）:** この画面は**サイドバーから非表示**となりました。請求業務は[会社まとめ請求](/consolidated-invoices)（`/consolidated-invoices`）に集約されています。新たな月次処理には会社まとめ請求をご利用ください。当画面はURL直接入力（`/bulk-invoices`）で引き続きアクセス可能です。
+
 ![月次請求書一括処理画面](/images/bulk-invoices.png)
 
 ## 概要
@@ -21,8 +23,8 @@ sidebar:
 
 ## アクセス方法
 
-- サイドバーから: **請求・入金 > 一括請求処理**
-- URL直接: `/bulk-invoices`
+- **URL直接**: `/bulk-invoices`（サイドバーからは非表示です）
+- 新規の月次処理には [会社まとめ請求](/consolidated-invoices) をご利用ください
 
 ## 画面構成
 
