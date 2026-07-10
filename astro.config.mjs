@@ -129,6 +129,7 @@ export default defineConfig({
             { label: '注文一覧（Orders）', slug: 'shopify-admin/orders' },
             { label: '下書き注文（Draft Orders）', slug: 'shopify-admin/draft-orders' },
             { label: '顧客（Customers）', slug: 'shopify-admin/customers' },
+            { label: 'アカウント無効化・ブラックリスト運用', slug: 'shopify-admin/account-blacklist' },
             { label: '商品管理（Products）', slug: 'shopify-admin/products' },
           ],
         },
