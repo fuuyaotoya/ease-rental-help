@@ -104,6 +104,7 @@ export default defineConfig({
             { label: 'ダッシュボード', slug: 'dashboard' },
             { label: '集計表出力', slug: 'aggregate-report' },
             { label: '自動送信メール一覧', slug: 'email-notifications' },
+            { label: 'メール本文テンプレート', slug: 'email-templates' },
           ],
         },
         {
