@@ -85,6 +85,7 @@ export default defineConfig({
         {
           label: 'マスタ・顧客',
           items: [
+            { label: '会員申込・承認', slug: 'membership-apply' },
             { label: '顧客管理', slug: 'customer-management' },
             { label: '商品管理', slug: 'products' },
             { label: 'マスタ管理', slug: 'master-data' },
