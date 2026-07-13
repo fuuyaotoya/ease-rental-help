@@ -24,9 +24,9 @@ sidebar:
 
 | ページ | テンプレート | 役割 |
 |--------|------------|------|
-| アカウント画面 | `customers/account.json` | 注文履歴一覧・アカウント情報 |
+| アカウント画面 | `customers/account.json` | 6タブ構成（貸出予定 / 未払い / 全履歴 / 配送先管理 / 請求先管理 / アカウント詳細・Issue #605） |
 | 注文詳細 | `customers/order.json` | 個別注文の詳細 |
-| 住所一覧 | `customers/addresses.json` | 配送先住所の管理 |
+| 住所一覧 | `customers/addresses.json` | 住所管理（1件制・実住所≥1件で追加ボタンと新規フォーム非表示・「住所の登録は1件までです」の案内）。※配送先(5件)・請求先(15件)は別系統で対象外 |
 | ログイン | `customers/login.json` | ログインフォーム |
 | 新規登録 | `customers/register.json` | アカウント登録 |
 | パスワードリセット | `customers/reset.json` | パスワード再設定 |
@@ -37,7 +37,7 @@ sidebar:
 
 | セクション | 説明 |
 |-----------|------|
-| `main-account` | アカウント画面（注文一覧） |
+| `main-account` | アカウント画面（6タブ構成・Issue #605）。タブ内で各 snippet を `render`: `customer-rental-bookings`（貸出予定/全履歴）・`customer-unpaid-fees`（未払い）・`customer-account-shipping`（配送先管理）・`customer-account-billing`（請求先管理）・`customer-account-profile`（アカウント詳細）※これらは snippet であり section ではない |
 | `main-order` | 注文詳細 |
 | `main-addresses` | 住所管理 |
 | `main-login` | ログインフォーム |
@@ -52,8 +52,9 @@ sidebar:
 マイアカウントページはShopifyの標準Dawnテンプレートをベースにしています。レンタル予約状況の表示など、カスタム機能はLiquidとJavaScriptで追加実装されています。
 
 予約ステータスの表示条件：
-- `status` フィールドに基づいてタブ表示（未払い / 支払い済み 等）
-- 詳細はテーマの `sections/main-account.liquid` を参照
+- アカウント画面は6タブ構成（貸出予定 / 未払い / 全履歴 / 配送先管理 / 請求先管理 / アカウント詳細・Issue #605）
+- 各伝票にはステータスバッジを付与（Issue #609）。実装の `STATUS_LABELS_S075` は7状態: 仮予約 / 予約確定 / レンタル中 / 返却済み（精算中） / お支払い待ち / 完了 / キャンセル（`PROCESSING` を貸出開始日で「予約確定/レンタル中」に2分割）
+- 詳細はテーマの `sections/main-account.liquid` および `snippets/customer-rental-bookings.liquid`（`STATUS_LABELS_S075` / `getStatusClass`）を参照
 
 **レンタル予約の編集機能（Issue #2259 / Theme #569）:**
 

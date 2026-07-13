@@ -89,6 +89,7 @@ export default defineConfig({
             { label: '顧客管理', slug: 'customer-management' },
             { label: '商品管理', slug: 'products' },
             { label: 'マスタ管理', slug: 'master-data' },
+            { label: '顧客マイページ（お客様向け）', slug: 'customer-mypage' },
           ],
         },
         {
