@@ -7,6 +7,11 @@ import remarkDevDirective from './src/plugins/remark-dev-directive.mjs';
 
 export default defineConfig({
   site: 'https://ease-rental-help.onrender.com',
+  redirects: {
+    // External legacy URL → canonical page. No internal link uses this path;
+    // kept for bookmarks / printed materials pointing at the nested form.
+    '/email-notifications/email-templates': '/email-templates/',
+  },
   markdown: {
     remarkPlugins: [remarkDevDirective],
   },
