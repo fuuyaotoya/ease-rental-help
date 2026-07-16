@@ -634,6 +634,35 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ---
 
+## Shopify 送信メール（参考）
+
+以下は **Shopify が直接送信**するメール（BE 経由ではない）で、初回顧客への即時支払い（ドラフトオーダー請求）等で利用します。文面は **Shopify admin > 設定 > 通知** で編集します（Liquid テンプレートの正は `ease-rental-shopifytheme/docs/specs/theme-spec/shopify-email-templates/`）。
+
+### 注文確認（order-confirmation）
+
+- **トリガー**: 注文確定時（Shopify 決済完了）
+
+**宛名**（個人/法人を `customer.last_name` の「・」有無で判別・#618）:
+- 法人: `会社名 御中 部署 担当者名 様`（部署なし場合は `会社名 御中 担当者名 様`）
+- 個人: `担当者名 様`
+
+**署名**: iziz 会社署名（BE と共通・`□■----` 〒住所/TEL/FAX/サイト/メール/営業時間）
+
+### 下書き注文の請求書（draft-order-invoice）
+
+- **トリガー**: ドラフトオーダーから請求メール送信時（初回顧客の即時支払い等）
+- **宛名**: 注文確認に同じ（会社・部署・担当者・日本式）
+- **署名**: iziz 会社署名（BE と共通）
+
+:::note[宛名のロジック]
+- 会社名: `customer.metafields.ease_rental.company`（なければ `customer.last_name`）
+- 担当者名: `customer.metafields.ease_rental.contact_person`（なければ `customer.first_name`）
+- 部署: `customer.metafields.ease_rental.department`（未設定なら省略・#2342 で追加）
+- 個人/法人判別: `customer.last_name` が「・」を含む=個人（会社名なし）。含まない=法人（last_name は `composeLastName` で会社名＋部署を合成）
+:::
+
+---
+
 ## 鮮度・保守
 
 - **最終確認日**: 2026-07-10
