@@ -394,6 +394,8 @@ Timestamp: ${new Date().toISOString()}
 - **トリガー**: 返金処理実行時（`requestRefund` 等）
 
 ```
+${greeting}
+
 返金処理が完了しました。
 返金金額: ${formatYen(amount)}
 （伝票番号がある場合）伝票番号: ${slipNumber}
