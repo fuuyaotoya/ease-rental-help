@@ -163,7 +163,7 @@ ${invoiceUrl}
 （商品ごとに1行）  ・${productName}（数量: ${quantity}）
 （商品がない場合）  ・(商品情報なし)
 
-（合計金額がある場合）合計金額: ¥${totalAmount}
+（合計金額がある場合）合計金額: ¥${totalAmount}（税込）
 
 ${paymentSection}
 
@@ -233,7 +233,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 【ご予約内容】
 （商品ごとに1行）  ・${productName}（数量: ${quantity}、期間: ${period}）
 レンタル開始日: ${startDate}
-（合計金額がある場合）ご請求金額: ${formatYen(totalAmount)}
+（合計金額がある場合）ご請求金額: ${formatYen(totalAmount)}（税込）
 
 ※ レンタル開始日の7日前（午前2時）までにお支払いが確認できない場合、
   ご予約は自動的にキャンセルとなりますのでご注意ください。
@@ -398,7 +398,7 @@ Timestamp: ${new Date().toISOString()}
 ${greeting}
 
 返金処理が完了しました。
-返金金額: ${formatYen(amount)}
+返金金額: ${formatYen(amount)}（税込）
 （伝票番号がある場合）伝票番号: ${slipNumber}
 （請求書番号がある場合）請求書番号: ${invoiceNumber}
 （理由がある場合）理由: ${reason}
@@ -665,8 +665,8 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ## 鮮度・保守
 
-- **最終確認日**: 2026-07-10
-- **対象 BE commit**: `95de1c8d` + FROM 分岐実装（`rental-info@` / `keiri@`）
+- **最終確認日**: 2026-07-16
+- **対象 BE commit**: `fc81f482`（#2216 税込明記・#2342 iziz 署名統一・宛名共通化を反映）+ FROM 分岐実装（`rental-info@` / `keiri@`）
 - **本文はコードから手動転記** しています。以下のファイルの本文を変更した際は、本ページの追従が必要です:
   - `src/modules/email/email.service.ts`（各 send メソッドの `text`）
   - `src/modules/invoices/invoices.service.ts`（`generateInvoiceEmailText`）
