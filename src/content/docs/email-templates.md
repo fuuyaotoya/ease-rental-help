@@ -412,7 +412,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 休業日: 日・祝
 ```
 
-**変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力・会社名/担当者名/部署・未指定は「ご担当者様」）, `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
+**変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力・会社名/部署/担当者名・未指定は「ご担当者様」）, `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
 
 ---
 
@@ -486,7 +486,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 休業日: 日・祝
 ```
 
-**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_contact_name` / `billing_department`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month}月`・例: `2026年01月`）
+**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_department` / `billing_contact_name`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month}月`・例: `2026年01月`）
 
 ### 10. Draft Order 追加決済請求（sendDraftOrderInvoiceMail）
 
