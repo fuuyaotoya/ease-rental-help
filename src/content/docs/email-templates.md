@@ -165,6 +165,8 @@ ${invoiceUrl}
 
 （合計金額がある場合）合計金額: ¥${totalAmount}（税込）
 
+（#2303/#2370）商品の追加をご希望の場合は、ご利用ガイド（https://ease-site.myshopify.com/pages/rental-faq#guide）をご覧ください。（HTML版では「ご利用ガイド」をアンカーテキスト化）
+
 ${paymentSection}
 
 （配送情報がある場合）${deliverySection}
