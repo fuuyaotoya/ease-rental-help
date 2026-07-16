@@ -604,7 +604,7 @@ Timestamp: ${new Date().toISOString()}
 - **トリガー**: スタッフが会員申込を承認した時（承認フローで Shopify 顧客作成後・`customerGenerateAccountActivationUrl` で有効化URL生成直後）
 
 ```
-（companyName がある場合）${companyName} 御中
+（companyName がある場合）${companyName} ご担当者様
 （companyName がない場合）お客様
 
 この度は会員申込をいただき、誠にありがとうございます。
@@ -643,7 +643,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 - **トリガー**: 注文確定時（Shopify 決済完了）
 
 **宛名**（個人/法人を `customer.last_name` の「・」有無で判別・#618）:
-- 法人: `会社名 御中 部署 担当者名 様`（部署なし場合は `会社名 御中 担当者名 様`）
+- 法人: `会社名 部署 担当者名 様`（部署なし場合は `会社名 担当者名 様`）
 - 個人: `担当者名 様`
 
 **署名**: iziz 会社署名（BE と共通・`□■----` 〒住所/TEL/FAX/サイト/メール/営業時間）
