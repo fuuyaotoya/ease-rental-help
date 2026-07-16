@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::dev
-> **管理者/開発者向けリファレンス:** 本ページは BE が SMTP 送信するメールの本文テンプレート全文です。`${...}` は実行時に値が埋まる変数。実装（`src/modules/email/email.service.ts` / `invoices.service.ts` / `consolidated-invoices.service.ts`）と1:1で照合できます。本文の変更時は本ページの追従が必要です（末尾「鮮度・保守」参照）。
+> **管理者/開発者向けリファレンス:** 本ページは BE が SMTP 送信するメールの本文テンプレート全文です。`${...}` は実行時に値が埋まる変数。実装（`src/modules/email/email.service.ts` / `invoices.service.ts` / `consolidated-invoices.service.ts` / `invoice-reminder-cron.service.ts`）と1:1で照合できます。本文の変更時は本ページの追従が必要です（末尾「鮮度・保守」参照）。
 :::
 
 バックエンド（BE）は nodemailer + SendGrid SMTP でメールを送信します。本ページは **BE が送信する全メールの本文テンプレート**を網羅します（Shopify が送信する注文確認などは対象外 → [メール送信の責任分界](./appendix/email-responsibility)）。
@@ -23,8 +23,8 @@ BE のメールは **2種類の送信元**を使い分けます。
 
 | 送信元 | 性質 | 対象メール |
 |--------|------|-----------|
-| `rental-info@iziz.co.jp` | **送信専用**（返信不可・監視しない） | 予約確認・リマインダ・キャンセル通知・返金通知・返却期限超過通知・追加決済請求（Draft Order）・管理者アラート 等、**請求書以外の全メール** |
-| `keiri@iziz.co.jp` | **経理専用**（返信可・経理チームが受信） | **請求書メールのみ**（標準請求書・統合請求書・再請求・督促） |
+| `rental-info@iziz.co.jp` | **送信専用**（返信不可・監視しない） | 予約確認・リマインダ・キャンセル通知・返金通知・追加決済請求（Draft Order）・管理者アラート・お問い合わせ受付 等、**請求書以外の全メール** |
+| `keiri@iziz.co.jp` | **経理専用**（返信可・経理チームが受信） | **請求書メールのみ**（標準請求書・統合請求書・再請求リマインダー・督促） |
 
 - `rental-info@` 宛の返信は **監視していません**。顧客からの問い合わせは、本文末尾の iziz 会社署名（メール: `shop@iziz.co.jp`／サイト: http://www.iziz.co.jp）をご案内しています（#2342）。
 - 請求書メールだけ `keiri@iziz.co.jp`（経理専用）から送り、**入金・請求に関する返信が経理チームに届く**ようにしています。
@@ -51,7 +51,7 @@ BE のメールは **2種類の送信元**を使い分けます。
 
 ### フッタ（共通の iziz 会社署名 — #2342）
 
-**全顧客向けメール**（予約確認・リマインダ・キャンセル通知・返金通知・返却期限超過通知・Draft Order 請求・会員招待・標準/統合請求書・お問い合わせ受付）は、共通の **iziz 会社署名**（`COMPANY_SIGNATURE`）を本文末尾に付与します。`email.service.ts` の `withSignature()` 経由で、プレーン本文にも HTML 本文にも自動反映されます（ロゴ画像は署名の後に配置）。
+**全顧客向けメール**（予約確認・リマインダ・キャンセル通知・返金通知・Draft Order 請求・会員招待・標準/統合請求書・再請求リマインダー・お問い合わせ受付）は、共通の **iziz 会社署名**（`COMPANY_SIGNATURE`）を本文末尾に付与します。`email.service.ts` の `withSignature()` 経由で、プレーン本文にも HTML 本文にも自動反映されます（ロゴ画像は署名の後に配置）。
 
 ```
 □■--------------------------------------------------------------
@@ -66,7 +66,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 | 種別 | フッタ |
 |------|--------|
 | 顧客向け（共通） | 上記 iziz 会社署名（`COMPANY_SIGNATURE`・`withSignature()` で付与） |
-| 管理者向け（return_overdue） | `---` / `EASE Rental System` / `Timestamp: ${ISO}` |
+| 管理者向け（return_overdue・廃止） | 旧 `---` / `EASE Rental System` / `Timestamp: ${ISO}`（#2182/#2321 で送信メソッドごと削除・現在送信されません） |
 | 管理者アラート | `---` / `EASE Rental System - Automated Alert` / `Timestamp: ${ISO}` |
 
 :::note[#2342 での変更]
@@ -85,6 +85,10 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 | 会社名のみ | `${会社名}` / `ご担当者様` |
 | 担当者名のみ | `${担当者名} 様` |
 | 両方なし | `ご担当者様` |
+
+:::note[宛名 SSOT の適用範囲]
+`buildBillingGreeting`（`src/modules/email/utils/build-billing-greeting.ts`）を使っているのは**返金通知・標準/統合請求書・再請求リマインダー**（請求先マスタ由来の宛名）。予約確認・リマインダ・キャンセル通知・Draft Order 請求・会員招待・お問い合わせ受付は `${customerName} 様` 等のインライン分岐（「御中」は全メソッドで使用しません・#2342）。
+:::
 
 ### 補助関数
 
@@ -112,7 +116,7 @@ bank_transfer:
 【お支払いについて】
 お客様は銀行振込でのお支払いとなります。
 月末締めの請求書を別途お送りいたしますので、記載の期日までにお振込みください。
-※ご返却があった月末で締めさせていただきます。例)7/30貸出→8/1返却の場合は8月末締めになります。
+※ご返却があった月末で締めさせていただきます。例)7/30貸出→8/1返却の場合是8月末締めになります。
 ```
 
 cash / store_payment:
@@ -145,6 +149,10 @@ ${invoiceUrl}
 （時間帯がある場合）  時間帯: ${timeWindow}
 ※配送の手配の可否・料金につきましては、別途ご連絡いたします。
 ```
+
+**HTML版の特記事項（#2359・#2370）:**
+- 商品画像がある場合（`items.some(item => !!item.imageUrl)`）、`【ご予約商品】`セクションを商品写真テーブル（`buildProductListHtml`）に置換（#2359）。画像1枚もない場合は従来テキスト版（#2055）。
+- ガイド行の「ご利用ガイド」を `<a href="${BOOKING_ADDITION_GUIDE_URL}" style="color:#0066cc;text-decoration:underline;">ご利用ガイド</a>` アンカーに置換（#2370）。
 
 **本文（メイン）:**
 ```
@@ -333,63 +341,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ## 返却・返金
 
-### 6. 返却期限超過通知（sendReturnOverdueNotice）
-
-- **件名**: `【重要】返却期限の延期について（${displayId}）`（顧客向け）/ `【管理者通知】返却期限延期のお知らせ（${displayId}）`（管理者向け）
-- **FROM**: `rental-info@iziz.co.jp`（送信専用）※顧客向け・管理者向けとも
-- **email_type**: `return_overdue`
-- **トリガー**: 返却期限超過の自動延期（cron）
-
-**顧客向け（isAdmin=false）:**
-```
-（customerNameがある場合）${customerName} 様
-（customerNameがない場合）お客様
-
-いつもEASE Rentalをご利用いただきありがとうございます。
-
-予約番号: ${displayId}
-
-誠に恐れ縮ですが、返却期限を過ぎておりましたため、
-以下の通り自動的に延期いたしました。
-
-【延期内容】
-超過日数: ${overdueDays}日
-
-【対象アイテム】
-（商品ごとに1行）  ・${productName}（数量: ${quantity}）
-
-大変お手数ですが、速やかにご返却をお願い申し上げます。
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-□■--------------------------------------------------------------
-〒141-0031 東京都品川区西五反田3-1-1
-TEL: 03-5759-8266　FAX: 03-5759-8262
-サイト: http://www.iziz.co.jp
-メールアドレス: shop@iziz.co.jp
-営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
-休業日: 日・祝
-```
-
-**管理者向け（isAdmin=true）:**
-```
-顧客: ${customerName || '未登録'}
-予約番号: ${displayId}
-超過日数: ${overdueDays}日
-
-【対象アイテム】
-（商品ごとに1行）  ・${productName}（数量: ${quantity}）
-
-※ 自動延期処理が実行されました。
-
----
-EASE Rental System
-Timestamp: ${new Date().toISOString()}
-```
-
-**変数**: `${customerName}`, `${displayId}`, `${overdueDays}`, `${productName}`, `${quantity}`
-
-### 7. 返金完了通知（sendRefundNotification）
+### 6. 返金完了通知（sendRefundNotification）
 
 - **件名**: `返金完了のお知らせ（請求書: ${invoiceNumber}）`（請求書番号がある場合）/ `返金完了のお知らせ`（ない場合）
 - **FROM**: `rental-info@iziz.co.jp`（送信専用）
@@ -416,17 +368,21 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 **変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力・会社名/部署/担当者名・未指定は「ご担当者様」）, `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
 
+:::note[廃止: 返却期限超過通知]
+旧 #6「返却期限超過通知（sendReturnOverdueNotice）」は、自動延長機能の廃止（#2182）に伴い `4f75d69e`（fix #2321・残骸削除）で送信メソッドごと削除されました（127行）。現在は送信されません。`return_overdue` email_type は過去の `email_logs`（sent 66 / skipped 42）の後方互換のため `email-type.constant.ts` に `[DEPRECATED #2321]` コメント付きで残置のみ。
+:::
+
 ---
 
 ## 請求書（keiri@iziz.co.jp から送信）
 
 :::note
-請求書メールは **経理専用アドレス `keiri@iziz.co.jp`** から送信されます。入金・請求に関する返信が経理チームに届きます。他のメール（送信専用 `rental-info@`）とは差出人が異なります。
+請求書メールは **経理専用アドレス `keeri@iziz.co.jp`** から送信されます。入金・請求に関する返信が経理チームに届きます。他のメール（送信専用 `rental-info@`）とは差出人が異なります。
 :::
 
-請求書メールはいずれも **銀行振込顧客のみ** が対象（クレジットカード顧客は Shopify 決済リンクで処理）。宛先は注文アカウントではなく **請求先マスタ（`billing_addresses`）の `billing_email`**。請求先未登録・`billing_email` 空の場合は送信スキップ＋管理者アラート（→ #7 管理者アラート）。
+請求書メールはいずれも **銀行振込顧客のみ** が対象（クレジットカード顧客は Shopify 決済リンクで処理）。宛先は注文アカウントではなく **請求先マスタ（`billing_addresses`）の `billing_email`**。請求先未登録・`billing_email` 空の場合は送信スキップ＋管理者アラート（→ 管理者アラート）。
 
-### 8. 標準請求書（invoices.service generateInvoiceEmailText）
+### 7. 標準請求書（invoices.service generateInvoiceEmailText）
 
 - **件名**: `請求書 ${invoice.invoice_number}`
 - **FROM**: `keiri@iziz.co.jp`（経理専用）
@@ -456,9 +412,9 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 **変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力）, `${invoice.invoice_number}`（※ #2342 で旧フッタ `--`/`${companyName}`/TEL/FAX を廃止し、共通の iziz 会社署名に統一。会社名は PDF 本体に記載）
 
-### 9. 統合（まとめ）請求書（consolidated-invoices.service generateInvoiceEmailText）
+### 8. 統合（まとめ）請求書（consolidated-invoices.service generateInvoiceEmailText）
 
-- **件名**: `【請求書】${getCompanyName()} ${year}年${month}月分`
+- **件名**: `【請求書】${getCompanyName()} ${monthFormatted}分`
 - **FROM**: `keiri@iziz.co.jp`（経理専用）
 - **email_type**: `invoice`
 - **トリガー**: 月次統合請求書送信操作時（API）/ 月次バッチ cron
@@ -488,12 +444,91 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 休業日: 日・祝
 ```
 
-**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_department` / `billing_contact_name`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month}月`・例: `2026年01月`）
+**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_department` / `billing_contact_name`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month.padStart(2,'0')}月`・例: `2026年01月`）
 
-### 10. Draft Order 追加決済請求（sendDraftOrderInvoiceMail）
+### 9. 単票（個別）請求書の再請求リマインダー（invoice-reminder-cron generateReminderEmailText）
+
+- **件名**: `【再請求】請求書のお支払いについて (${invoice.invoice_number})`
+- **FROM**: `keiri@iziz.co.jp`（経理専用・`emailService.sendInvoice` 経由）
+- **email_type**: `invoice`
+- **トリガー**: 未入金の標準請求書に対する再請求（`invoice-reminder-cron`・定期）
+- **添付**: 請求書 PDF
+
+```
+${greeting}
+
+平素より大変お世話になっております。
+${ourCompanyName}でございます。
+
+${reminderText}の請求書再送付のご連絡を申し上げます。
+
+請求書番号: ${invoiceNumber}
+お支払い期限: ${dueDate}
+請求金額: ${formatYen(totalAmount)}（税込）
+
+つきましては、添付の請求書をご確認いただき、
+お支払いの手続きをお願い申し上げます。
+
+既にお支払い済みの場合は、何卒ご容赦くださいませ。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+今後ともよろしくお願い申し上げます。
+
+--
+${ourCompanyName}
+EASE Rental
+```
+
+**変数**: `${greeting}`（buildBillingGreeting・`resolveBookingEffectiveBillingFromMaster` #2255 経由）, `${ourCompanyName}`（`getCompanyName()`）, `${reminderText}`（`reminderNumber === 1 ? '初回' : '${reminderNumber}回目'`）, `${invoiceNumber}`, `${dueDate}`（`formatDateJP(invoice.due_date)`・`YYYY年M月D日`）, `${formatYen(totalAmount)}`
+
+:::caution[二重フッタ（#2342 取り残し・BE側修正候補）]
+本文内に `-- / ${ourCompanyName} / EASE Rental` の独自フッタが残存しており、さらに `withSignature()` で iziz 会社署名（COMPANY_SIGNATURE）も付与される**二重フッタ状態**。初回送信（#7/#8）は #2342 で本文内フッタを削除済みだが、再請求リマインダー（#9/#10）は取り残されている。BE 側で本文内フッタを削除する修正が候補。
+:::
+
+### 10. 統合（まとめ）請求書の再請求リマインダー（invoice-reminder-cron generateConsolidatedReminderEmailText）
+
+- **件名**: `【再請求】${monthFormatted}分 統合請求書のお支払いについて`
+- **FROM**: `keeri@iziz.co.jp`（経理専用・`emailService.sendInvoice` 経由）
+- **email_type**: `invoice`
+- **トリガー**: 未入金の統合請求書の再請求（`invoice-reminder-cron`・定期）
+- **添付**: 統合請求書 PDF
+
+```
+${greeting}
+
+平素より大変お世話になっております。
+${ourCompanyName}でございます。
+
+${monthFormatted}分の統合請求書につきまして、
+${reminderText}の再送付をご連絡申し上げます。
+
+請求金額: ${formatYen(totalAmount)}（税込）
+
+つきましては、添付の請求書をご確認いただき、
+お支払いの手続きをお願い申し上げます。
+
+既にお支払い済みの場合は、何卒ご容赦くださいませ。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+今後ともよろしくお願い申し上げます。
+
+--
+${ourCompanyName}
+EASE Rental
+```
+
+**変数**: `${greeting}`（buildBillingGreeting・引数は `consolidated_invoices` snapshot 列）, `${ourCompanyName}`, `${monthFormatted}`（`${year}年${month.padStart(2,'0')}月`）, `${reminderText}`, `${formatYen(totalAmount)}`
+
+:::caution[二重フッタ（#2342 取り残し・BE側修正候補）]
+#9 と同一。本文内フッタ `-- / ${ourCompanyName} / EASE Rental` が残存 + withSignature で iziz 署名も付与。
+:::
+
+### 11. Draft Order 追加決済請求（sendDraftOrderInvoiceMail）
 
 - **FROM**: `rental-info@iziz.co.jp`（送信専用）※「請求書」ではなく追加決済の決済リンク案内のため経理専用ではなく送信専用
-- **email_type**: `draft_order_invoice`
+- **email_type**: `draft_order_invoice`（`recordDunning=true` のときは追加で `reminder` も記録）
 - **トリガー**: 追加課金発生時（DO②配送料 / DO③追加料金 / DO④追加商品 / DO⑤配送キャンセル料）・cron 督促（T-3/T-1）
 
 **件名・冒頭文（kind 別）:**
@@ -554,12 +589,16 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 **変数**: `${customerName}`, `${preamble}`, `${displayId}`, `${referenceDateLabel}`, `${totalAmount}`, `${title}`, `${quantity}`, `${amount}`, `${invoiceUrl}`, `${paymentDeadlineMinutes}`
 
+:::note[金額「（税込）」未明記・BE側修正候補]
+`合計: ¥${totalAmount}` / 明細 `¥${amount}` に「（税込）」がありません（#2216 d243a953 の統一明記から逸脱）。本ページは実コード通りを記載。BE 側での「（税込）」追加が修正候補。
+:::
+
 ---
 
 ## 管理者アラート（sendAdminAlert）
 
 - **件名**: `【EASE Rental Alert】${subject}`（引数 `subject` の先頭に prefix 付与）
-- **FROM**: `rental-info@iziz.co.jp`（送信専用）
+- **FROM**: `rental-info@iziz.co.jp`（送信専用・宛先は管理者）
 - **email_type**: `admin_alert`
 - **トリガー**: データ不整合・請求先情報不備・Shopify連携エラー・長期間OPENのDraftOrder等の異常検知時（API/webhook/cron 多岐）
 
@@ -594,11 +633,15 @@ Timestamp: ${new Date().toISOString()}
 
 他、`data-integrity-monitor` / `shipping-fee-stale-draft-order-cron` / `draft-booking-lifecycle` / `invoice-reminder-cron` / `andon-notifier` 等、計13箇所の caller から送信されます。
 
+:::note[顧客向けではない]
+管理者アラートは `withSignature()` を通さず、iziz 会社署名は付きません（`email.service.ts` で "Internal notifications intentionally bypass this" と明記）。
+:::
+
 ---
 
-## 会員
+## 会員・お問い合わせ
 
-### 11. 会員登録案内（sendMembershipInvitation・#2264 新規申込向け）
+### 12. 会員登録案内（sendMembershipInvitation・#2264 新規申込向け）
 
 - **件名**: `【EASE Rental】会員登録のご案内（アカウント有効化のお願い）`
 - **FROM**: `rental-info@iziz.co.jp`（送信専用）
@@ -634,6 +677,90 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 本テンプレートは**新規申込（#2264）の承認後**に送られる招待メールです（「審査の結果、承認」の案内）。Phase C（既存顧客マイグレーション・#2342）の一括招待は**既存顧客向け**（審査なし・Shopify 標準テンプレートで一括送信）のため文面が別です → [会員申込・承認フロー](./membership-apply) の「Phase C」節
 :::
 
+### 13. お問い合わせ受付（sendInquiryReceipt・buildInquiryReceiptText）
+
+- **件名**: `【EASE Rental】お問い合わせ受付（自動送信メール）`
+- **FROM**: `rental-info@iziz.co.jp`（送信専用）
+- **email_type**: `inquiry_receipt`
+- **トリガー**: お問い合わせフォーム送信時（App Proxy 受付・#2360 で `form_type` 別に振分：在庫確認 / 一般お問い合わせ）
+
+**宛名（salutation）:**
+- 法人（companyName あり）: `${companyName} ご担当者様`
+- 個人（companyName なし）: `${contactName} 様`
+
+**本文（旧 iziz サイト互換フォーマット・セクション区切り `…`×50）:**
+```
+${salutation}
+
+${greeting}（在庫確認: この度は、EASE WEBカタログより在庫確認をいただき誠にありがとうございます。/ 一般: この度は、EASE WEBカタログよりお問い合わせをいただき誠にありがとうございます。）
+お問い合わせ頂いた内容は下記の通りでお間違えがないかご確認下さい。
+
+※送信メールは登録しているものなので、こちらは送信専用のアドレスになります。
+　後ほど、正式なご案内メールをお送りいたします。
+
+……………………………………………………
+お客様情報
+……………………………………………………
+（会社名がある場合）⬩会社名: ${companyName}
+⬩担当者名: ${contactName}
+（電話がある場合）⬩電話番号: ${phone}
+⬩メールアドレス: ${email}
+
+……………………………………………………
+お問合せ内容
+……………………………………………………
+（種別がある場合）⬩お問い合わせ種別: ${inquiryType}（#2360）
+（期間がある場合）⬩レンタル期間: ${rentalPeriod}
+（予約種別がある場合）⬩${reservationType}
+（メッセージがある場合）⬩お問い合わせ内容:
+${message}（#2360 自由記述）
+
+（搬入希望がある場合）
+⬩デリバリー(搬入)希望
+  ⬩時間: ${time}
+  ⬩住所: ${address}
+  ⬩搬入の際にお手伝い頂ける方: ${helper}
+  ⬩搬入先に駐車場はありますか: ${parking}
+
+（搬出希望がある場合）
+⬩デリバリー（搬出）希望
+  …（搬入と同構造・directionLabel=搬出）
+
+（支払方法がある場合）
+……………………………………………………
+お支払方法について
+……………………………………………………
+${paymentLines}（決済方法・請求先ブロック: 会社名/担当者/メール/プロジェクト名）
+
+（在庫確認商品がある場合）
+……………………………………………………
+在庫確認商品
+……………………………………………………
++ アイテム名: ${name}
+（型番がある場合）+ 型番: ${modelNumber}
++ 数量: ${quantity}
+（日数がある場合）+ レンタル日数: ${rentalDays}
++ 合計金額: ${formatYen(amount)}
+
+……………………………………………………
+合計数量：${totalQuantity}
+（合計がある場合）合計金額(税別)：${formatYen(amountExcludingTax)}
+
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
+```
+
+**変数**: `${salutation}`, `${greeting}`, `${companyName}`, `${contactName}`, `${phone}`, `${email}`, `${inquiryType}`, `${rentalPeriod}`, `${reservationType}`, `${message}`, 搬入/搬出希望（time/address/helper/parking）, `${paymentLines}`, 在庫確認商品（name/modelNumber/quantity/rentalDays/amount）, `${totalQuantity}`, `${amountExcludingTax}`
+
+:::note[旧 iziz 互換・税別路線]
+本メールは旧 iziz サイト互換フォーマットです。`withSignature()` SSOT 経由でなく本文内に直接 `COMPANY_SIGNATURE` を配置（#2342）。また金額は**税別路線**（`合計金額(税別)`・アイテム `合計金額` は税区分明示なし）で、#2216「（税込）」統一の対象外。
+:::
+
 ---
 
 ## Shopify 送信メール（参考）
@@ -667,13 +794,20 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ## 鮮度・保守
 
-- **最終確認日**: 2026-07-16
-- **対象 BE commit**: `fc81f482`（#2216 税込明記・#2342 iziz 署名統一・宛名共通化を反映）+ FROM 分岐実装（`rental-info@` / `keiri@`）
+- **最終確認日**: 2026-07-17
+- **対象 BE commit**: `e370aef5`（#2370 ガイドURL修正・#2342 iziz 署名統一・#2359 写真テーブル・#2360 フォーム振分・#2216 税込明記 を反映）
 - **本文はコードから手動転記** しています。以下のファイルの本文を変更した際は、本ページの追従が必要です:
   - `src/modules/email/email.service.ts`（各 send メソッドの `text`）
   - `src/modules/invoices/invoices.service.ts`（`generateInvoiceEmailText`）
   - `src/modules/consolidated-invoices/consolidated-invoices.service.ts`（`generateInvoiceEmailText`）
+  - `src/modules/schedule/invoice-reminder-cron.service.ts`（`generateReminderEmailText` / `generateConsolidatedReminderEmailText`）
   - `src/modules/email/utils/build-billing-greeting.ts`（宛名生成）
+
+### 既知の乖離・follow-up
+
+- **再請求リマインダー（#9/#10）の二重フッタ**: 本文内に `-- / 会社名 / EASE Rental` が残存 + `withSignature` で iziz 署名も付与（#2342 完全統一から取り残し・BE側で本文内フッタ削除が修正候補）。
+- **sendDraftOrderInvoiceMail（#11）の金額「（税込）」未明記**: `合計: ¥${totalAmount}` / 明細 `¥${amount}` に「（税込）」がない（#2216 統一から逸脱・BE側修正候補）。
+- **#6 返却期限超過通知**: #2182 廃止・#2321 残骸削除で実コードから削除済み。本ページからも削除（廃止注記のみ残置）。
 
 ## 関連
 
