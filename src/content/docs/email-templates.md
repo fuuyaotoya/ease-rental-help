@@ -26,7 +26,7 @@ BE のメールは **2種類の送信元**を使い分けます。
 | `rental-info@iziz.co.jp` | **送信専用**（返信不可・監視しない） | 予約確認・リマインダ・キャンセル通知・返金通知・返却期限超過通知・追加決済請求（Draft Order）・管理者アラート 等、**請求書以外の全メール** |
 | `keiri@iziz.co.jp` | **経理専用**（返信可・経理チームが受信） | **請求書メールのみ**（標準請求書・統合請求書・再請求・督促） |
 
-- `rental-info@` 宛の返信は **監視していません**。顧客からの問い合わせを想定したメールには、本文中に別の問い合わせ先（`info@ease-rental.com` など）を記載しています。
+- `rental-info@` 宛の返信は **監視していません**。顧客からの問い合わせは、本文末尾の iziz 会社署名（メール: `shop@iziz.co.jp`／サイト: http://www.iziz.co.jp）をご案内しています（#2342）。
 - 請求書メールだけ `keiri@iziz.co.jp`（経理専用）から送り、**入金・請求に関する返信が経理チームに届く**ようにしています。
 - 設定は環境変数で上書き可能: `EMAIL_FROM`（送信専用・デフォルト `rental-info@`）/ `INVOICE_EMAIL_FROM`（請求書用・デフォルト `keiri@`）。いずれも SendGrid 認証済み sender である必要があります。
 
@@ -49,15 +49,31 @@ BE のメールは **2種類の送信元**を使い分けます。
 - ロゴ画像（PNG）を **本文下部（フッタ）** に配置
 - `LOGO_URL`: `https://cdn.shopify.com/s/files/1/0699/9582/3279/files/creative-logo01.png?v=1779071046`
 
-### フッタ（メール種別ごとの固定文）
+### フッタ（共通の iziz 会社署名 — #2342）
+
+**全顧客向けメール**（予約確認・リマインダ・キャンセル通知・返金通知・返却期限超過通知・Draft Order 請求・会員招待・標準/統合請求書・お問い合わせ受付）は、共通の **iziz 会社署名**（`COMPANY_SIGNATURE`）を本文末尾に付与します。`email.service.ts` の `withSignature()` 経由で、プレーン本文にも HTML 本文にも自動反映されます（ロゴ画像は署名の後に配置）。
+
+```
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
+```
 
 | 種別 | フッタ |
 |------|--------|
-| 顧客向け（共通） | `---` / `EASE Rental` / `お問い合わせ: info@ease-rental.com` |
+| 顧客向け（共通） | 上記 iziz 会社署名（`COMPANY_SIGNATURE`・`withSignature()` で付与） |
 | 管理者向け（return_overdue） | `---` / `EASE Rental System` / `Timestamp: ${ISO}` |
 | 管理者アラート | `---` / `EASE Rental System - Automated Alert` / `Timestamp: ${ISO}` |
-| 標準請求書 | `--` / `${自社会名}` / `TEL: 03-5759-8266` / `FAX: 03-5759-8262` |
-| 統合請求書 | `────────────────────────────`（全角細線28字）/ `${自社会名}` |
+
+:::note[#2342 での変更]
+- 顧客向けメールの簡易フッタ（`---` / `EASE Rental` / `お問い合わせ: info@ease-rental.com`）を廃止し、共通の iziz 会社署名に統一しました。
+- 標準請求書（`--` / `${自社会名}` / `TEL` / `FAX`）・統合請求書（`────` / `${自社会名}`）が本文に持っていた独自フッタも廃止し、共通署名に統一しました。会社名は**請求書 PDF 本体**に記載されています（メール本文からは会社名表記が消え、iziz 署名のサイト URL・メールアドレスで発行者を明示します）。
+- 返金完了通知は従来フッタなしでしたが、共通署名を付与するようにしました。
+:::
 
 ### 宛名生成ロジック（buildBillingGreeting）
 
@@ -155,9 +171,13 @@ ${paymentSection}
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${customerName}`, `${slipNumber}`, `${startDate}`, `${endDate}`, `${productName}`, `${quantity}`, `${totalAmount}`, `${invoiceUrl}`, `${deliveryTypeLabel}`, `${destinationName}`, `${address}`, `${phone}`, `${deliveryDate}`, `${timeWindow}`
@@ -184,9 +204,13 @@ EASE Rental
 引き続きよろしくお願いいたします。
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${customerName}`, `${slipNumber}`, `${bookingId}`, `${productName}`, `${quantity}`, `${period}`, `${confirmedAt}`
@@ -216,9 +240,13 @@ EASE Rental
 
 お支払い方法やご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${customerName}`, `${slipNumber}`, `${bookingId}`, `${productName}`, `${quantity}`, `${period}`, `${startDate}`, `${formatYen(totalAmount)}`, `${daysUntilStart}`
@@ -247,9 +275,13 @@ ${paymentInstruction}
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 `${paymentInstruction}` は銀行振込可否で分岐:
@@ -283,9 +315,13 @@ ${reason}
 改めてご予約をご希望の場合は、再度お申し込みをお願いいたします。
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${customerName}`, `${slipNumber}`, `${bookingId}`, `${reason}`, `${productName}`, `${quantity}`, `${period}`
@@ -323,9 +359,13 @@ EASE Rental
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **管理者向け（isAdmin=true）:**
@@ -359,6 +399,14 @@ Timestamp: ${new Date().toISOString()}
 （伝票番号がある場合）伝票番号: ${slipNumber}
 （請求書番号がある場合）請求書番号: ${invoiceNumber}
 （理由がある場合）理由: ${reason}
+
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
@@ -392,13 +440,16 @@ ${greeting}
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
---
-${companyName}
-TEL: 03-5759-8266
-FAX: 03-5759-8262
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
-**変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力）, `${invoice.invoice_number}`, `${companyName}`（`getCompanyName()`＝自社会名）
+**変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力）, `${invoice.invoice_number}`（※ #2342 で旧フッタ `--`/`${companyName}`/TEL/FAX を廃止し、共通の iziz 会社署名に統一。会社名は PDF 本体に記載）
 
 ### 9. 統合（まとめ）請求書（consolidated-invoices.service generateInvoiceEmailText）
 
@@ -423,8 +474,13 @@ ${ourCompanyName}です。
 
 よろしくお願いいたします。
 
-────────────────────────────
-${ourCompanyName}
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_contact_name` / `billing_department`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month}月`・例: `2026年01月`）
@@ -482,9 +538,13 @@ ${paymentSection}
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
----
-EASE Rental
-お問い合わせ: info@ease-rental.com
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
 ```
 
 **変数**: `${customerName}`, `${preamble}`, `${displayId}`, `${referenceDateLabel}`, `${totalAmount}`, `${title}`, `${quantity}`, `${amount}`, `${invoiceUrl}`, `${paymentDeadlineMinutes}`
@@ -528,6 +588,46 @@ Timestamp: ${new Date().toISOString()}
 | 二重決済疑い | `[二重決済疑い] ...` | 振込後クレカ二重決済の検知 |
 
 他、`data-integrity-monitor` / `shipping-fee-stale-draft-order-cron` / `draft-booking-lifecycle` / `invoice-reminder-cron` / `andon-notifier` 等、計13箇所の caller から送信されます。
+
+---
+
+## 会員
+
+### 11. 会員登録案内（sendMembershipInvitation・#2264 新規申込向け）
+
+- **件名**: `【EASE Rental】会員登録のご案内（アカウント有効化のお願い）`
+- **FROM**: `rental-info@iziz.co.jp`（送信専用）
+- **email_type**: `membership_invitation`
+- **トリガー**: スタッフが会員申込を承認した時（承認フローで Shopify 顧客作成後・`customerGenerateAccountActivationUrl` で有効化URL生成直後）
+
+```
+（companyName がある場合）${companyName} 御中
+（companyName がない場合）お客様
+
+この度は会員申込をいただき、誠にありがとうございます。
+審査の結果、ご登録を承認いたしました。
+
+下記のURLからアカウントを有効化し、パスワードを設定してください。
+
+${activationUrl}
+
+※このURLの有効期限は発行から30日間です。期限が切れた場合は再度ご連絡ください。
+有効化後、レンタルのご予約が可能になります。
+
+□■--------------------------------------------------------------
+〒141-0031 東京都品川区西五反田3-1-1
+TEL: 03-5759-8266　FAX: 03-5759-8262
+サイト: http://www.iziz.co.jp
+メールアドレス: shop@iziz.co.jp
+営業時間: 9:30～18:30(月～金)・9:30～17:00(土)
+休業日: 日・祝
+```
+
+**変数**: `${companyName}`（申込者の会社名・ない場合は「お客様」）, `${activationUrl}`（legacy accounts の有効化URL・有効期限30日）
+
+:::note[Phase C（既存顧客一括招待）との違い]
+本テンプレートは**新規申込（#2264）の承認後**に送られる招待メールです（「審査の結果、承認」の案内）。Phase C（既存顧客マイグレーション・#2342）の一括招待は**既存顧客向け**（審査なし・Shopify 標準テンプレートで一括送信）のため文面が別です → [会員申込・承認フロー](./membership-apply) の「Phase C」節
+:::
 
 ---
 
