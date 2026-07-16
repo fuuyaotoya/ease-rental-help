@@ -259,7 +259,8 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 - **トリガー**: 自動キャンセル前日（レンタル開始7日前・`draft-booking-lifecycle` cron）
 
 ```
-${customerName} 様
+（customerNameがある場合）${customerName} 様
+（customerNameがない場合）お客様
 
 いつもEASE Rentalをご利用いただきありがとうございます。
 
@@ -411,7 +412,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 休業日: 日・祝
 ```
 
-**変数**: `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
+**変数**: `${greeting}`（[buildBillingGreeting](#宛名生成ロジックbuildbillinggreeting) の出力・会社名/担当者名/部署・未指定は「ご担当者様」）, `${formatYen(amount)}`, `${slipNumber}`, `${invoiceNumber}`, `${reason}`
 
 ---
 
