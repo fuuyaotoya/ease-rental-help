@@ -65,7 +65,7 @@ sidebar:
 
 | 表示名 | 内部値 | 備考 |
 |--------|--------|------|
-| 処理中 | `PROCESSING` | ピッキング完了後 |
+| 処理中 | `PROCESSING` | 予約作成後〜出荷前（cart/theme/webhook/bank_transfer では初期状態・#2397） |
 | 金額確認待ち | `PRICE_CONFIRM_PENDING` | 返却後の金額調整中 |
 | 請求待ち | `BILLING_PENDING` | 銀行振込など請求書発行待ち |
 | 入金待ち | `PAYMENT_PENDING` | 請求書発行済・入金確認待ち |

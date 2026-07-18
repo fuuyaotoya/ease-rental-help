@@ -82,7 +82,7 @@ CANCELLED ◄──── 任意のステータスから遷移可能
 | ----------------------- | ---------------- | ---------------------------------- |
 | `DRAFT`                 | 未確定           | 伝票作成時の初期状態（#1016）      |
 | `CONFIRMED`             | 予約確定         | DRAFT から確定時（#1016）          |
-| `PROCESSING`            | ピッキング完了   | 物理準備完了時（#1016）            |
+| `PROCESSING`            | 処理中   | 予約作成直後（cart/theme/webhook/bank_transfer・#2397）。ピッキングは picking_status 別軸 |
 | `SHIPPED`               | 出荷済み         | 出荷完了時（#1016）                |
 | `RETURNED`              | 返却済み         | 返却受領時（#1016）                |
 | `AMOUNT_CONFIRMED`      | 金額確定         | 返却後金額確定時（#1016）          |
@@ -274,14 +274,13 @@ CANCELLED ◄──────────────────────�
 
 ### PROCESSING の意味変遷
 
-| | @Suite | Backend #943/#980 | Backend #1016（現行） |
-|---|---|---|---|
-| **初期状態** | DRAFT | PROCESSING | DRAFT |
-| **PROCESSING の意味** | ピッキング済 | 伝票作成時の初期状態 | ピッキング完了 |
-| **予約確定** | CONFIRMED | （なし） | CONFIRMED |
+| | @Suite | Backend #943/#980 | Backend #1016（意図・Model A） | Backend #2397（現行・Model B） |
+|---|---|---|---|---|
+| **初期状態** | DRAFT | PROCESSING | DRAFT | DRAFT（管理画面）/ PROCESSING（cart/theme/webhook/bank_transfer） |
+| **PROCESSING の意味** | ピッキング済 | 伝票作成時の初期状態 | ピッキング完了（意図のみ・実装されず） | 予約作成直後の初期ステータス（ピッキングは picking_status 別軸） |
+| **予約確定** | CONFIRMED | （なし） | CONFIRMED | CONFIRMED |
 
-> Issue #943 で `@default("DRAFT")` → `@default("PROCESSING")` に変更後、
-> Issue #1016 で `@default("DRAFT")` に戻り、11値に拡張。
+> Issue #943 で `@default("DRAFT")` → `@default("PROCESSING")` に変更後、Issue #1016 で `@default("DRAFT")` に戻り 11値に拡張。#1016 は PROCESSING を「ピッキング完了」と定義した（Model A）が、`completePicking` は `booking.status` を変えない実装のため実挙動と乖離。**Issue #2397** で Model B（予約直後の初期ステータス）に統一し、ラベルを「処理中」に是正（docs-site 運用者向けページと整合）。
 
 ### レガシー値の自動変換
 
