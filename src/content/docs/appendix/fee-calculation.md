@@ -145,6 +145,38 @@ function calculateDailyRate(basePrice, days) {
 
 ---
 
+## キャンセルの種類と料率の適用
+
+キャンセルには大きく分けて「伝票全体」「商品の部分」「配送のみ」の3パターンがあり、キャンセルの範囲と伝票の状態によって料率の適用が異なります。
+
+### キャンセルの範囲と料率
+
+| キャンセルの種類 | 対象 | 商品レンタル料の料率 | 配送料の扱い |
+|---|---|---|---|
+| **伝票全体のキャンセル** | 伝票の全商品 | 全商品に商品料率（上記「料率表」）を適用 | 非クレカは請求額に含めて精算／クレカは DO②（配送料請求）で別途回収 |
+| **商品の部分キャンセル** | 伝票の特定商品のみ | キャンセルした商品に商品料率を適用（残商品は影響なし） | 影響なし |
+| **配送のキャンセル** | 配送のみ | 影響なし | キャンセルした配送に配送キャンセル料率（上記「配送キャンセル料」）を適用（クレカは DO⑤・後払い伝票は DO① charges に統合 [#2399](https://github.com/iziz-system/ease-rental-backend/issues/2399)） |
+
+> **ポイント:** 料率は「キャンセルする人」（管理者・顧客）で変わりません。変わるのは**伝票の状態**（仮予約=無料 / 確定済み=課金）と**キャンセルの範囲**（全体・部分・配送のみ）です。
+
+### 伝票の状態による無料・課金の区別
+
+| 伝票の状態 | キャンセル経路 | キャンセル料 |
+|---|---|---|
+| **仮予約（DRAFT）** — カート確定前・未確定 | 顧客マイページからキャンセル | **無料**（[#2379](https://github.com/iziz-system/ease-rental-backend/issues/2379) DRAFT skip・未確定のため） |
+| **仮予約（TENTATIVE）** — 管理画面で手動作成した仮押さえ | スタッフが手動キャンセル | **課金対象**（[#2325](https://github.com/iziz-system/ease-rental-backend/issues/2325)・キープ時点で課金） |
+| **確定予約（CONFIRMED）以降** | スタッフ経由でキャンセル | **課金対象**（本マニュアルの料率表どおり） |
+
+:::dev
+> **#2379（顧客セルフ全件キャンセル・#2307 gap クローズ）:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（仮予約）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。
+> **#2307:** 部分キャンセルのキャンセル料を後払い伝票の charges に計上（`cancelBookingItem` cascade 含む）。
+> **#2399:** 配送キャンセル料を後払い伝票の DO① charges に統合（伝票1:領収書1の回復・クレカは引き続き DO⑤）。
+> **#2404:** DO③↔DO① 二重請求の三層防御（settlement gate + swap CAS + active-billing 交差 fail-closed）。顧客セルフキャンセルは DO③ PENDING 行を `cancelOutstandingBillings` で cleanup し、同防御と整合。
+> **SSOT:** `calculateCancellationFee`（`booking-totals.service.ts`）+ `applyCancellationSideEffects`（util・8 caller）+ `recalculate`。配送キャンセル料は `deliveries.cancellation_fee`（#2113 SSOT）。
+:::
+
+---
+
 :::dev
 ## 実装詳細
 

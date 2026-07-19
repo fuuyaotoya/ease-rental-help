@@ -1,37 +1,52 @@
 ---
 title: '自動キャンセルの仕組み'
-description: 'クレジットカード・銀行振込の未決済 Draft Order が自動キャンセルされる仕組みと条件'
+description: '未決済予約の自動キャンセル条件・対象外・タイミング・2つの cron（銀行振込確定予約・後払い・管理画面仮予約は保護）'
 sidebar:
   order: 50
 tableOfContents: false
 ---
 
-> **💡 運用者向け:** クレジットカード・銀行振込で決済が完了しないまま放置された予約（カート経由）は、在庫ロックを防ぐため自動キャンセルされます。管理画面で手動作成した伝票（`backend_app`）は対象外です。キャンセル条件・タイミング・ジョブ・トラブルシューティングの技術詳細は開発者モード（ページ右上のトグル）を ON にしてご確認ください。
+> **💡 運用者向け:** 未決済のまま放置された予約（カート経由）は、在庫ロックを防ぐため自動キャンセルされます。ただし**銀行振込の確定予約・後払い（返却後決済）伝票・管理画面で手動作成した仮予約は自動キャンセル対象外**（入金や返却を待つため）です。キャンセル条件・タイミング・ジョブ・トラブルシューティングの技術詳細は開発者モード（ページ右上のトグル）を ON にしてご確認ください。
 
 :::dev
-> **出典:** BE #1772 調査結果（2026-05-23）+ UAT 実証データ検証
+> **出典:** BE #1772 調査結果（2026-05-23）+ #1944（銀行振込保護）+ #2072/#2073（仮予約自動失効 cron 廃止）+ #2284/#2330（deferred-checkout 除外）— 2026-07-19 时点
 
 ## 概要
 
 Shopify テーマ経由（カート）で作成された予約のうち、決済が完了しないまま放置された Draft Order は**自動的にキャンセル**されます。これにより、在庫の長期ロックを防ぎ、新規予約を受け付けられる状態に戻します。
 
-## キャンセル対象
+ただし、**入金や返却を待つべき予約は自動キャンセルから保護**されます（#1944/#2284/#2330）。また、管理画面で手動作成した仮予約は自動失効しません（#2072/#2073 で仮予約失効 cron を廃止・スタッフ手動キャンセルのみ）。
+
+## 自動キャンセルの主体（2つの cron）
+
+| cron | 頻度 | 役割 | 主な対象 |
+|------|------|------|---------|
+| **`draft-order-cleanup`**（①）| 5分毎（既定135分で失効）| 未決済 Draft Order の短期 hold 解放（カート落ち）| 未決済の cart 経由予約 |
+| **`draft-booking-lifecycle`**（③）| 毎日 02:00 JST | 開始日基準の支払期限失効（開始6日前）| 開始日が近づいた未決済予約 |
+
+> ①は「短期 hold（135分）」・③は「開始日基準の失効（6日前）」と**目的が異なる**ため、除外条件も個別に設定されています（#1319/#1944 の教訓：2 cron を一括変更しない）。稼働確認は Backend の `reminder_logs` テーブル（`reminder_type='auto_cancel'`）で検索。
+
+## キャンセル対象（保護対象外）
 
 | 条件 | 値 |
 |------|---|
-| 伝票ステータス | `DRAFT` / `PROCESSING` / `BILLING_PENDING` |
-| 予約ソース | `cart` （Shopify テーマ経由）。**`backend_app`（管理画面手動作成）は対象外** |
-| 支払方法 | `shopify_credit` / `bank_transfer` 両方 |
+| 伝票ステータス | `DRAFT` / `PROCESSING` / `BILLING_PENDING`（未確定・未決済）|
+| 予約ソース | `cart`（Shopify テーマ経由）。**`backend_app`（管理画面手動作成）は対象外** |
+| 支払方法 | `shopify_credit`（クレカ）。**`bank_transfer`（銀行振込）の確定予約は対象外**（#1944・入金を待つ）※未確定（DRAFT）段階の cart 経由は対象 |
+| 決済方法の性質 | 先払い（`pay_now=true`）。**後払い（deferred-checkout：配送 or pickup×`pay_now=false`）は対象外**（#2284/#2330・返却後決済のため）|
 | キャンセル理由 | `Draft Order expired (unpaid)` |
 
-## ジョブ稼働
+## 対象外のケース（保護される予約）
 
-| 項目 | 値 |
-|------|---|
-| **ジョブ名** | `draft-booking-lifecycle` |
-| **稼働頻度** | 毎日 02:00 JST |
-| **稼働確認方法** | Backend の `reminder_logs` テーブルで `reminder_type='auto_cancel'` を検索 |
-| **失敗時の通知** | 現状は Logger のみ（外部通知なし） |
+以下の予約は**自動キャンセルされません**（入金や返却を待つ・または手動管理のため）:
+
+| 伝票種別 | 理由 | 対応 issue |
+|---------|------|-----------|
+| **確定予約の銀行振込**（`銀行振込可`タグ保有 or `payment_method=bank_transfer`）| 入金まで時間がかかるため、支払期限系 cron ①③から除外。キャンセルはスタッフ手動のみ | #1944（#1319 で誤削除→復活）|
+| **後払い伝票**（deferred-checkout：クレカ×配送 or クレカ×pickup×`pay_now=false`）| 返却後に決済するため、①②の自動キャンセルから除外。督促メールも skip | #2284/#2330 |
+| **管理画面の仮予約**（`source=backend_app`・`confirm_status=TENTATIVE`）| ①③は `source:{not:'backend_app'}` で元々到達しない。仮予約失効 cron（旧 `tentative-reservation-cleanup`）は #2072/#2073 で**廃止**（スタッフ手動キャンセルのみ・`tentative_expires_at` も付与しない）| #2072/#2073 |
+| 既に AMOUNT_CONFIRMED / COMPLETED の伝票 | キャンセル対象ステータスではない | — |
+| Shopify Draft Order が expire していない | webhook が発火しない | — |
 
 ## 自動処理フロー
 
@@ -40,9 +55,9 @@ Shopify でカート → Draft Order 作成（決済前）
    ↓
    ↓ 顧客が支払い操作を行わず放置
    ↓
-   ↓ Shopify Draft Order が expire（24-72時間）
+   ↓ ①135分経過（draft-order-cleanup）or ③開始6日前（draft-booking-lifecycle）
    ↓
-Backend が webhook 経由で検知
+Backend が cron で検知（銀行振込の確定予約 / 後払い / 管理画面仮予約は skip）
    ↓
 booking.status = CANCELLED
 booking.cancellation_reason = "Draft Order expired (unpaid)"
@@ -64,47 +79,32 @@ booking.cancellation_reason = "Draft Order expired (unpaid)"
 | B260521013 | 5/21 | 5/21 | 5/22 | 銀行振込 |
 
 > 直近5/18〜5/22まで毎日キャンセルが発生しており、ジョブ・Webhook が安定稼働していることを示しています。
+> ※2026-07-19 时点では銀行振込の**確定予約**は #1944 で保護されているため、上記の銀行振込キャンセルは「未確定（DRAFT）段階の cart 経由」のものです。
 
 ### Shopify Admin での確認結果
 
-2026-05-23 検証: 上記キャンセル伝票の Draft Order GID を直接 Shopify Admin にアクセスして確認したところ、**全て「このアドレスに下書き注文はありません」（404）** が表示されました。
-
-| 伝票No. | Backend ステータス | Shopify Admin |
-|---------|-------------------|---------------|
-| B260522028 (DraftOrder 1301329576111) | CANCELLED | 404（完全削除） |
-| B260521017 (DraftOrder 1300993114287) | CANCELLED | 404（完全削除） |
-
-これは以下を意味します:
-- Shopify 側で Draft Order が完全に削除されている = Shopify の expire メカニズムが完了
-- Backend の `cancellationReason="Draft Order expired (unpaid)"` と完全に同期
-- 重複データなし、データ整合性が保たれている
-
-## 対象外のケース
-
-以下の伝票は **自動キャンセルされません**:
-
-| 伝票種別 | 理由 |
-|---------|------|
-| 管理画面 (`/booking-compact`) で作成 | `source = 'backend_app'` のため対象外 |
-| 既に AMOUNT_CONFIRMED / COMPLETED | キャンセル対象ステータスではない |
-| Shopify Draft Order が expire していない | webhook が発火しない |
+2026-05-23 検証: 上記キャンセル伝票の Draft Order GID を直接 Shopify Admin にアクセスして確認したところ、**全て「このアドレスに下書き注文はありません」（404）** が表示されました。Shopify 側で Draft Order が完全削除されており、Backend の `cancellation_reason="Draft Order expired (unpaid)"` と完全に同期しています（重複データなし・データ整合性保たれている）。
 
 ## トラブルシューティング
 
 ### 「自動キャンセルされていない」と思われる場合
 
 1. **伝票の `source` を確認**
-   - `backend_app` の場合は自動キャンセル対象外。管理画面から手動でキャンセル
+   - `backend_app`（管理画面手動作成）は自動キャンセル対象外。管理画面から手動でキャンセル
    - `cart` の場合のみ自動キャンセル対象
-2. **Shopify Draft Order の状態を確認**
+2. **支払方法・決済性質を確認**
+   - 銀行振込の**確定予約**は #1944 で保護（入金待ち）・自動キャンセルされない
+   - 後払い伝票（deferred-checkout）は #2284/#2330 で保護（返却後決済）・自動キャンセルされない
+3. **Shopify Draft Order の状態を確認**
    - Shopify Admin で該当 Draft Order が `expired` になっているか
    - まだ `open` の場合は、Shopify 側のタイムアウトが来ていない
-3. **Backend ログを確認**
+4. **Backend ログを確認**
    - `reminder_logs` テーブルで該当伝票の処理ログを検索
 
 ### 「意図せず自動キャンセルされた」と思われる場合
 
-- 顧客が決済を完了していなかった可能性が高い
+- カート経由（`source=cart`）の未決済予約が放置された可能性が高い
+- 銀行振込でも**未確定（DRAFT）段階**の cart 経由予約は対象（確定後は #1944 で保護）
 - Shopify Admin の Draft Order ページで履歴確認可能
 - 必要に応じて新規 Draft Order を作成して再請求
 
@@ -112,5 +112,6 @@ booking.cancellation_reason = "Draft Order expired (unpaid)"
 
 - [返却・金額確定](/bookings-return/) — キャンセル後の在庫ロック解放
 - [メール送信責任分界](/appendix/email-responsibility/) — キャンセル通知メール
-- [仮予約期限切れ](/appendix/email-responsibility/) — BE #994/#996/#1003 で実装
+- [キャンセル料率](/appendix/fee-calculation/) — キャンセルの種類と料率（#2379/#2307/#2399）
+- BE `.claude/rules/auto-cancel-exclusions.md` — 自動キャンセル8経路の正準カタログ（開発者向け）
 :::
