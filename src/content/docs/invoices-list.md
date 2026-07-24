@@ -5,6 +5,8 @@ sidebar:
   order: 51
 ---
 
+> ⚠️ **仕様変更（2026-07・#2408/#2409/#2441）:** 後払いクレカは請求書発行可能になりました（旧: クレカ全件請求書NG）。前日自動請求 cron も追加。DO②/③の参照は一部旧仕様。最新は [決済方法別伝票作成フロー](/appendix/payment-method-flows/) と [後払いクレカ基本化の仕様変更](/appendix/post-pay-credit-card-migration/) を参照。
+
 
 :::dev
 > **パス:** `/invoices-list`
