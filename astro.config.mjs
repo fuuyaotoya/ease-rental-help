@@ -149,6 +149,8 @@ export default defineConfig({
             { label: 'URL直接アクセス', slug: 'appendix/url-patterns' },
             { label: 'メール送信の責任分界', slug: 'appendix/email-responsibility' },
             { label: '自動キャンセルの仕組み', slug: 'appendix/auto-cancellation' },
+            { label: '前日自動請求の仕組み', slug: 'appendix/auto-invoicing' },
+            { label: '決済方法別伝票作成フロー', slug: 'appendix/payment-method-flows' },
             { label: '後払いクレカ基本化の仕様変更', slug: 'appendix/post-pay-credit-card-migration' },
           ],
         },
