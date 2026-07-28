@@ -34,6 +34,25 @@ const CFG = {
 
 const SEV_TO_MODEL = { red: 'sol', yellow: 'terra' } // light は codex を呼ばない（L1）
 
+// 段階別 model/effort レバー（.claude/rules/model-selection.md: effort は model と独立・機械的は low）。
+// セッションが GLM 起動なら名前は自動 remap（opus→glm-5.2 / sonnet→glm-5.1 / haiku→glm-5-turbo）＝定額のまま tier だけ下がる。
+// セッション effort 既定が high 保存でも、機械的な段まで high で回さないための明示指定。
+// - Survey: 読解+分類 → sonnet/medium（Opus 週次枠の温存。sev/scope 判定は sonnet で足りる）
+// - Fix: sev で分岐 — red は継承モデル(=Opus)+effort high（網羅性が質を決める領域）/ yellow は継承+既定 / light は sonnet/low
+// - codex ラッパー: bash 実行と JSON 整形だけだが、失敗モードが「P0/P1 の取りこぼし=ゲート破壊」なので
+//   haiku までは下げない → sonnet/low（レビュー本体は GPT-5.6 側で走る。haiku はこの fleet では不使用方針）
+// - Commit: 機械的 git 操作（add 範囲の規律は prompt が担う）→ sonnet/low
+const STAGE = {
+  survey: { model: 'sonnet', effort: 'medium' },
+  fix: {
+    red:    { effort: 'high' },
+    yellow: {},
+    light:  { model: 'sonnet', effort: 'low' },
+  },
+  codex:  { model: 'sonnet', effort: 'low' },
+  commit: { model: 'sonnet', effort: 'low' },
+}
+
 const SURVEY_SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
@@ -201,7 +220,7 @@ for (const issue of ISSUES) {
   log(`=== #${issue.n} (sev=${issue.sev || '未指定→Survey判定'}) ===`)
 
   const survey = await agent(surveyPrompt(issue), {
-    label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA,
+    label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA, ...STAGE.survey,
   })
   if (!survey) { results.push({ n: issue.n, status: 'agent-lost' }); continue }
   issue.sev = issue.sev || survey.sev
@@ -232,6 +251,7 @@ for (const issue of ISSUES) {
     rounds++
     lastFix = await agent(fixPrompt(issue, survey, findings, rounds), {
       label: `fix:#${issue.n} r${rounds}`, phase: 'Fix+Verify', schema: FIX_SCHEMA,
+      ...(STAGE.fix[issue.sev] || {}),
     })
     if (!lastFix || lastFix.skipped) { verdict = 'fix-skipped'; break }
 
@@ -250,7 +270,7 @@ for (const issue of ISSUES) {
     if (!isL2) { verdict = 'l1-pass'; break } // light: codex なし（純正 /code-review は朝にユーザーが必要なら実行）
 
     const review = await agent(codexReviewPrompt(issue, survey, rounds), {
-      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA,
+      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA, ...STAGE.codex,
     })
     if (!review) { verdict = 'codex-unavailable'; break }
     verdict = review.verdict
@@ -270,7 +290,7 @@ for (const issue of ISSUES) {
   }
 
   const commit = await agent(commitPrompt(issue, survey, verdict, rounds, p2FollowUps), {
-    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA,
+    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA, ...STAGE.commit,
   })
 
   const status = !commit || commit.skipped
