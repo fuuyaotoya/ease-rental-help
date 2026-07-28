@@ -12,10 +12,15 @@ export const meta = {
 // 使い方: 対象リポのセッションで Workflow ツールに scriptPath を渡す
 //   「.claude/workflows/issue-batch.mjs を args=[2453,2454] で Workflow ツール実行して」
 //   ⚠️ `/issue-batch` のスラッシュ呼び出しは不可（手置き workflow は未登録・Unknown command）
-//   モデルはセッション継承 = glm 起動なら GLM / 素の claude なら Opus
-// args 要素: 数値 or { n, sev?, group?, title? }
+// args 要素: 数値 or { n, sev?, title?, survey? } ＋ オプション要素（下記）
 //   sev: red(🔴領域=L2/sol) / yellow(API契約・guard=L2/terra) / light(テスト・docs級=L1・codexなし)
-//   sev 省略時は Survey が判定する。
+//        省略時は Survey が判定する。**実装モデルの自動昇格もこの sev で決まる**（PROFILES 参照）
+//   survey: 事前に立てた計画（{title,approach,targetFiles,scope,...}）。渡すと Survey 段をスキップする
+// オプション要素:
+//   {"profile":"opus"|"glm"|"fable"}  段階別 model/effort（既定 opus）
+//   {"mode":"survey-only"}           Survey だけ回して {surveys:[...]} を返す（opusglm の Phase1）
+// ⚠️ プロセスのエンジン（Anthropic / ZAI）は起動側が決める。profile:'glm' は
+//    「GLM セッションで起動されている」前提の設定であって、これ自体がエンジンを切り替えはしない。
 
 // CFG-START（リポ固有設定 — 複製時はここだけ変える）
 const CFG = {
@@ -34,36 +39,55 @@ const CFG = {
 
 const SEV_TO_MODEL = { red: 'sol', yellow: 'terra' } // light は codex を呼ばない（L1）
 
-// 段階別 model/effort レバー（.claude/rules/model-selection.md: effort は model と独立・機械的は low）。
-// ⚠️ **従量課金エンジン（素の claude）でのみ適用**。GLM は下の stageOpts で丸ごと無効化される。
-// セッション effort 既定が high 保存でも、機械的な段まで high で回さないための明示指定。
-// - Survey: 読解+分類 → sonnet/medium（Opus 枠の温存。sev/scope 判定は sonnet で足りる）
-// - Fix: sev で分岐 — red は継承モデル(=Opus)+effort high（網羅性が質を決める領域）/ yellow は継承+既定 / light は sonnet/low
-// - codex ラッパー: bash 実行と JSON 整形だけだが、失敗モードが「P0/P1 の取りこぼし=ゲート破壊」なので
-//   haiku までは下げない → sonnet/low（レビュー本体は GPT-5.6 側で走る。haiku はこの fleet では不使用方針）
-// - Commit: 機械的 git 操作（add 範囲の規律は prompt が担う）→ sonnet/low
-const STAGE = {
-  survey: { model: 'sonnet', effort: 'medium' },
-  fix: {
-    red:    { effort: 'high' },
-    yellow: {},
-    light:  { model: 'sonnet', effort: 'low' },
+// ---- モデルプロファイル ----------------------------------------------------
+// トークン残量で選ぶ（.claude/rules/model-selection.md の4レーン協調に準拠）。
+// args の {"profile":"opus"} で選択（run.sh / /batch が付与）。既定は 'opus'。
+//
+//   opus    … 余裕あり: 計画 opus / 実装 sonnet（red だけ opus に自動昇格）
+//   opusglm … 少ない  : 計画 opus / 実装 glm。**プロセスを跨ぐので workflow からは見えない**。
+//                       run.sh が Phase1='opus'(survey-only) → Phase2='opus'(red) / 'glm'(他) に分解する
+//   glm     … 無し    : 全段 glm。ZAI 定額なので tier も effort も下げる意味がない
+//                       （むしろ model:'sonnet' は glm-5.2→glm-5.1 の格下げになる。remap は
+//                        opus→glm-5.2[1m] / sonnet→glm-5.1 / haiku→glm-5-turbo）
+//   fable   … 難問    : 計画 fable / 実装 opus / 機械段 sonnet
+//
+// **自動昇格は fix の sev 別マップがそのもの**: Survey が red と判定した issue だけ実装が上位モデルになる。
+// codex ラッパーは bash 実行と JSON 整形だけだが、失敗モードが「P0/P1 の取りこぼし＝ゲート破壊」なので
+// haiku までは下げない（haiku はこの fleet では不使用方針）。レビュー本体は GPT-5.6 側で走る。
+const PROFILES = {
+  opus: {
+    survey: { model: 'opus', effort: 'high' },
+    fix: {
+      red:    { model: 'opus',   effort: 'high' },   // ← 自動昇格
+      yellow: { model: 'sonnet', effort: 'medium' },
+      light:  { model: 'sonnet', effort: 'low' },
+    },
+    codex:  { model: 'sonnet', effort: 'low' },
+    commit: { model: 'sonnet', effort: 'low' },
   },
-  codex:  { model: 'sonnet', effort: 'low' },
-  commit: { model: 'sonnet', effort: 'low' },
+  fable: {
+    survey: { model: 'fable', effort: 'high' },
+    fix: {
+      red:    { model: 'opus',   effort: 'xhigh' },  // ← 自動昇格
+      yellow: { model: 'opus',   effort: 'high' },
+      light:  { model: 'sonnet', effort: 'low' },
+    },
+    codex:  { model: 'sonnet', effort: 'low' },
+    commit: { model: 'sonnet', effort: 'low' },
+  },
+  // 定額: model 指定なし（セッション継承 = opus スロット = glm-5.2）× effort 最大
+  glm: {
+    survey: { effort: 'max' },
+    fix: { red: { effort: 'max' }, yellow: { effort: 'max' }, light: { effort: 'max' } },
+    codex:  { effort: 'max' },
+    commit: { effort: 'max' },
+  },
 }
 
-// ⚠️ STAGE レバーが得なのは**従量課金のエンジンだけ**。
-// GLM(ZAI 定額) セッションでは model 名が別物に remap される（.claude/rules/model-selection.md）:
-//   opus → glm-5.2[1m] / sonnet → glm-5.1 / haiku → glm-5-turbo
-// つまり model:'sonnet' は glm-5.2 → glm-5.1 への**格下げ**。定額なので節約は 0 で品質だけ落ちる。
-// effort も同様（定額では下げても払う額は変わらない。かかるのは時間だけ）。
-// → flat-rate では STAGE を無効化し、**全段 glm-5.2（= opus スロット）× effort:'max'** で回す。
-//   model を明示しないのはセッション継承で既に glm-5.2 になるため（素の claude 相当の opus スロット）。
-// args に {"engine":"glm"} が含まれていれば flat-rate と判定する（run.sh が付与）。
-const FLAT_RATE_OPTS = { effort: 'max' }
-function stageOpts(o, flatRate) {
-  return flatRate ? FLAT_RATE_OPTS : (o || {})
+function profileOpts(profile, stage, sev) {
+  const p = PROFILES[profile] || PROFILES.opus
+  const o = stage === 'fix' ? (p.fix[sev] || p.fix.yellow) : p[stage]
+  return o || {}
 }
 
 const SURVEY_SCHEMA = {
@@ -221,8 +245,14 @@ if (typeof rawArgs === 'string') {
 }
 if (rawArgs && !Array.isArray(rawArgs)) rawArgs = [rawArgs]
 const RAW = Array.isArray(rawArgs) ? rawArgs : []
-// {"engine":"glm"} 要素があれば定額エンジン → STAGE レバー（tier/effort 下げ）を全て無効化する
-const FLAT_RATE = RAW.some(a => a && typeof a === 'object' && a.engine === 'glm')
+const opt = k => {
+  const a = RAW.find(x => x && typeof x === 'object' && x[k] !== undefined)
+  return a ? a[k] : undefined
+}
+// {"profile":"opus|glm|fable"} で段階別 model/effort を決める。旧 {"engine":"glm"} も受ける。
+const PROFILE = PROFILES[opt('profile')] ? opt('profile') : (opt('engine') === 'glm' ? 'glm' : 'opus')
+// {"mode":"survey-only"} なら Survey だけ回して返す（opusglm の Phase1）
+const SURVEY_ONLY = opt('mode') === 'survey-only'
 const ISSUES = RAW
   .map(a => (typeof a === 'number' || typeof a === 'string' ? { n: Number(a) } : a))
   .filter(a => a && a.n)
@@ -231,16 +261,40 @@ if (!ISSUES.length) {
 }
 
 const results = []
+const surveys = []
+log(`profile=${PROFILE}${SURVEY_ONLY ? ' mode=survey-only' : ''} issues=${ISSUES.length}`)
 
 for (const issue of ISSUES) {
   log(`=== #${issue.n} (sev=${issue.sev || '未指定→Survey判定'}) ===`)
 
-  const survey = await agent(surveyPrompt(issue), {
-    label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA, ...stageOpts(STAGE.survey, FLAT_RATE),
-  })
+  // 事前 survey が渡っていれば Survey 段を丸ごと飛ばす（opusglm の Phase2 — 計画は Opus が済ませている）
+  let survey = issue.survey || null
+  if (survey) {
+    log(`#${issue.n} survey は事前注入済み（Survey 段スキップ）`)
+  } else {
+    survey = await agent(surveyPrompt(issue), {
+      label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA,
+      ...profileOpts(PROFILE, 'survey'),
+    })
+    // ⚠️ Fable は forced structured-output が無言の空返りを起こしうる（model-router）。
+    //    Survey は schema 必須なので直撃する → opus で1回だけ張り直す。
+    if (!survey && PROFILE === 'fable') {
+      log(`#${issue.n} Survey が空 → fable の structured-output 不発とみなし opus で再試行`)
+      survey = await agent(surveyPrompt(issue), {
+        label: `survey:#${issue.n} (opus fallback)`, phase: 'Survey', schema: SURVEY_SCHEMA,
+        model: 'opus', effort: 'high',
+      })
+    }
+  }
   if (!survey) { results.push({ n: issue.n, status: 'agent-lost' }); continue }
   issue.sev = issue.sev || survey.sev
   issue.title = survey.title
+
+  if (SURVEY_ONLY) {
+    surveys.push({ n: issue.n, sev: issue.sev, survey })
+    log(`#${issue.n} survey-only → ${issue.sev}/${survey.scope}`)
+    continue
+  }
 
   if (survey.scope !== 'clear') {
     log(`#${issue.n} skipped (${survey.scope}): ${survey.approach}`)
@@ -267,7 +321,7 @@ for (const issue of ISSUES) {
     rounds++
     lastFix = await agent(fixPrompt(issue, survey, findings, rounds), {
       label: `fix:#${issue.n} r${rounds}`, phase: 'Fix+Verify', schema: FIX_SCHEMA,
-      ...stageOpts(STAGE.fix[issue.sev], FLAT_RATE),
+      ...profileOpts(PROFILE, "fix", issue.sev),
     })
     if (!lastFix || lastFix.skipped) { verdict = 'fix-skipped'; break }
 
@@ -286,7 +340,7 @@ for (const issue of ISSUES) {
     if (!isL2) { verdict = 'l1-pass'; break } // light: codex なし（純正 /code-review は朝にユーザーが必要なら実行）
 
     const review = await agent(codexReviewPrompt(issue, survey, rounds), {
-      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA, ...stageOpts(STAGE.codex, FLAT_RATE),
+      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA, ...profileOpts(PROFILE, "codex"),
     })
     if (!review) { verdict = 'codex-unavailable'; break }
     verdict = review.verdict
@@ -306,7 +360,7 @@ for (const issue of ISSUES) {
   }
 
   const commit = await agent(commitPrompt(issue, survey, verdict, rounds, p2FollowUps), {
-    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA, ...stageOpts(STAGE.commit, FLAT_RATE),
+    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA, ...profileOpts(PROFILE, "commit"),
   })
 
   const status = !commit || commit.skipped
@@ -325,10 +379,20 @@ for (const issue of ISSUES) {
   log(`#${issue.n} → ${status} (r${rounds}) ${commit && commit.commitHash || ''}`)
 }
 
+if (SURVEY_ONLY) {
+  return {
+    summary: `issue-batch(${CFG.repo}) survey-only: ${surveys.length}/${ISSUES.length} 件の計画を作成（profile=${PROFILE}）`,
+    mode: 'survey-only',
+    surveys,
+    lost: results.filter(r => r.status === 'agent-lost').map(r => r.n),
+  }
+}
+
 const done = results.filter(r => r.status === 'done').length
 const skipped = results.filter(r => r.status === 'skipped').length
 return {
-  summary: `issue-batch(${CFG.repo}): done=${done}/${results.length} skipped=${skipped}（push なし・朝の棚卸しで承認）`,
+  summary: `issue-batch(${CFG.repo}): done=${done}/${results.length} skipped=${skipped}（profile=${PROFILE}・push なし・朝の棚卸しで承認）`,
+  profile: PROFILE,
   pushedAny: results.some(r => r.pushed),
   results,
 }
