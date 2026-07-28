@@ -184,7 +184,14 @@ for (const issue of ISSUES) {
 
   if (survey.scope !== 'clear') {
     log(`#${issue.n} skipped (${survey.scope}): ${survey.approach}`)
-    results.push({ n: issue.n, title: survey.title, sev: issue.sev, status: 'skipped', reason: survey.scope, questions: survey.approach })
+    results.push({
+      n: issue.n, title: survey.title, sev: issue.sev, status: 'skipped',
+      reason: survey.scope, questions: survey.approach,
+      // ambiguous は /issue-clarify（Gate 0）で質問化 → 回答後に再投入
+      nextAction: survey.scope === 'ambiguous-needs-human'
+        ? `/issue-clarify #${issue.n}（質問を生成→人間承認→投稿）`
+        : '先行リポの変更完了を待って再投入',
+    })
     continue
   }
 
