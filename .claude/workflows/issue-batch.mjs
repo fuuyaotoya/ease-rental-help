@@ -9,8 +9,8 @@ export const meta = {
   ],
 }
 
-// 使い方（対象リポのセッションから起動。モデルはセッション継承 = glm 起動なら GLM / 素の claude なら Opus）:
-//   Workflow({ scriptPath: '.claude/workflows/issue-batch.mjs', args: [2453, { n: 2454, sev: 'red' }] })
+// 使い方: 対象リポのセッションで `/issue-batch`（例:「/issue-batch を #2453 と #2454 で」）
+//   モデルはセッション継承 = glm 起動なら GLM / 素の claude なら Opus
 // args 要素: 数値 or { n, sev?, group?, title? }
 //   sev: red(🔴領域=L2/sol) / yellow(API契約・guard=L2/terra) / light(テスト・docs級=L1・codexなし)
 //   sev 省略時は Survey が判定する。
