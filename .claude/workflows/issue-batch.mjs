@@ -35,9 +35,9 @@ const CFG = {
 const SEV_TO_MODEL = { red: 'sol', yellow: 'terra' } // light は codex を呼ばない（L1）
 
 // 段階別 model/effort レバー（.claude/rules/model-selection.md: effort は model と独立・機械的は low）。
-// セッションが GLM 起動なら名前は自動 remap（opus→glm-5.2 / sonnet→glm-5.1 / haiku→glm-5-turbo）＝定額のまま tier だけ下がる。
+// ⚠️ **従量課金エンジン（素の claude）でのみ適用**。GLM は下の stageOpts で丸ごと無効化される。
 // セッション effort 既定が high 保存でも、機械的な段まで high で回さないための明示指定。
-// - Survey: 読解+分類 → sonnet/medium（Opus 週次枠の温存。sev/scope 判定は sonnet で足りる）
+// - Survey: 読解+分類 → sonnet/medium（Opus 枠の温存。sev/scope 判定は sonnet で足りる）
 // - Fix: sev で分岐 — red は継承モデル(=Opus)+effort high（網羅性が質を決める領域）/ yellow は継承+既定 / light は sonnet/low
 // - codex ラッパー: bash 実行と JSON 整形だけだが、失敗モードが「P0/P1 の取りこぼし=ゲート破壊」なので
 //   haiku までは下げない → sonnet/low（レビュー本体は GPT-5.6 側で走る。haiku はこの fleet では不使用方針）
@@ -51,6 +51,19 @@ const STAGE = {
   },
   codex:  { model: 'sonnet', effort: 'low' },
   commit: { model: 'sonnet', effort: 'low' },
+}
+
+// ⚠️ STAGE レバーが得なのは**従量課金のエンジンだけ**。
+// GLM(ZAI 定額) セッションでは model 名が別物に remap される（.claude/rules/model-selection.md）:
+//   opus → glm-5.2[1m] / sonnet → glm-5.1 / haiku → glm-5-turbo
+// つまり model:'sonnet' は glm-5.2 → glm-5.1 への**格下げ**。定額なので節約は 0 で品質だけ落ちる。
+// effort も同様（定額では下げても払う額は変わらない。かかるのは時間だけ）。
+// → flat-rate では STAGE を無効化し、**全段 glm-5.2（= opus スロット）× effort:'max'** で回す。
+//   model を明示しないのはセッション継承で既に glm-5.2 になるため（素の claude 相当の opus スロット）。
+// args に {"engine":"glm"} が含まれていれば flat-rate と判定する（run.sh が付与）。
+const FLAT_RATE_OPTS = { effort: 'max' }
+function stageOpts(o, flatRate) {
+  return flatRate ? FLAT_RATE_OPTS : (o || {})
 }
 
 const SURVEY_SCHEMA = {
@@ -207,7 +220,10 @@ if (typeof rawArgs === 'string') {
   try { rawArgs = JSON.parse(rawArgs) } catch { rawArgs = [] }
 }
 if (rawArgs && !Array.isArray(rawArgs)) rawArgs = [rawArgs]
-const ISSUES = (Array.isArray(rawArgs) ? rawArgs : [])
+const RAW = Array.isArray(rawArgs) ? rawArgs : []
+// {"engine":"glm"} 要素があれば定額エンジン → STAGE レバー（tier/effort 下げ）を全て無効化する
+const FLAT_RATE = RAW.some(a => a && typeof a === 'object' && a.engine === 'glm')
+const ISSUES = RAW
   .map(a => (typeof a === 'number' || typeof a === 'string' ? { n: Number(a) } : a))
   .filter(a => a && a.n)
 if (!ISSUES.length) {
@@ -220,7 +236,7 @@ for (const issue of ISSUES) {
   log(`=== #${issue.n} (sev=${issue.sev || '未指定→Survey判定'}) ===`)
 
   const survey = await agent(surveyPrompt(issue), {
-    label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA, ...STAGE.survey,
+    label: `survey:#${issue.n}`, phase: 'Survey', schema: SURVEY_SCHEMA, ...stageOpts(STAGE.survey, FLAT_RATE),
   })
   if (!survey) { results.push({ n: issue.n, status: 'agent-lost' }); continue }
   issue.sev = issue.sev || survey.sev
@@ -251,7 +267,7 @@ for (const issue of ISSUES) {
     rounds++
     lastFix = await agent(fixPrompt(issue, survey, findings, rounds), {
       label: `fix:#${issue.n} r${rounds}`, phase: 'Fix+Verify', schema: FIX_SCHEMA,
-      ...(STAGE.fix[issue.sev] || {}),
+      ...stageOpts(STAGE.fix[issue.sev], FLAT_RATE),
     })
     if (!lastFix || lastFix.skipped) { verdict = 'fix-skipped'; break }
 
@@ -270,7 +286,7 @@ for (const issue of ISSUES) {
     if (!isL2) { verdict = 'l1-pass'; break } // light: codex なし（純正 /code-review は朝にユーザーが必要なら実行）
 
     const review = await agent(codexReviewPrompt(issue, survey, rounds), {
-      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA, ...STAGE.codex,
+      label: `codex:#${issue.n} r${rounds}`, phase: 'Review', schema: VERDICT_SCHEMA, ...stageOpts(STAGE.codex, FLAT_RATE),
     })
     if (!review) { verdict = 'codex-unavailable'; break }
     verdict = review.verdict
@@ -290,7 +306,7 @@ for (const issue of ISSUES) {
   }
 
   const commit = await agent(commitPrompt(issue, survey, verdict, rounds, p2FollowUps), {
-    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA, ...STAGE.commit,
+    label: `commit:#${issue.n}`, phase: 'Commit', schema: COMMIT_SCHEMA, ...stageOpts(STAGE.commit, FLAT_RATE),
   })
 
   const status = !commit || commit.skipped
