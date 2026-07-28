@@ -9,7 +9,9 @@ export const meta = {
   ],
 }
 
-// 使い方: 対象リポのセッションで `/issue-batch`（例:「/issue-batch を #2453 と #2454 で」）
+// 使い方: 対象リポのセッションで Workflow ツールに scriptPath を渡す
+//   「.claude/workflows/issue-batch.mjs を args=[2453,2454] で Workflow ツール実行して」
+//   ⚠️ `/issue-batch` のスラッシュ呼び出しは不可（手置き workflow は未登録・Unknown command）
 //   モデルはセッション継承 = glm 起動なら GLM / 素の claude なら Opus
 // args 要素: 数値 or { n, sev?, group?, title? }
 //   sev: red(🔴領域=L2/sol) / yellow(API契約・guard=L2/terra) / light(テスト・docs級=L1・codexなし)
@@ -163,8 +165,15 @@ function commitPrompt(issue, survey, verdict, rounds, extraFollowUps) {
 }
 
 // ---- main ----
-const ISSUES = (Array.isArray(args) ? args : [])
-  .map(a => (typeof a === 'number' ? { n: a } : a))
+// ⚠️ 呼び出し側によっては args が JSON 文字列で届く（2026-07-28 実測: headless から
+//    scriptPath 起動した際 typeof args === 'string'）。両形状を正規化する。
+let rawArgs = args
+if (typeof rawArgs === 'string') {
+  try { rawArgs = JSON.parse(rawArgs) } catch { rawArgs = [] }
+}
+if (rawArgs && !Array.isArray(rawArgs)) rawArgs = [rawArgs]
+const ISSUES = (Array.isArray(rawArgs) ? rawArgs : [])
+  .map(a => (typeof a === 'number' || typeof a === 'string' ? { n: Number(a) } : a))
   .filter(a => a && a.n)
 if (!ISSUES.length) {
   return { error: 'args に issue 配列を渡す。例: Workflow({scriptPath, args: [2453, {"n":2454,"sev":"red"}]})' }
