@@ -3,7 +3,7 @@ export const meta = {
   description: 'issue リストを Survey→Fix+Verify→3層Review→Commit で順次処理（push しない・朝の人間承認前提・sev で codex 要否を判定）',
   phases: [
     { title: 'Survey', detail: 'issue本文+参照資料+既存pattern・sev/scope 判定' },
-    { title: 'Fix+Verify', detail: '修正→build/test（+anti-patterns scan）' },
+    { title: 'Fix+Verify', detail: '修正→build/test（+リポ固有スキャン・差分のみブロック）' },
     { title: 'Review', detail: 'L2(red/yellow)のみ codex adversarial・P0/P1のみ継続・最大3R。light(L1)は codex なし' },
     { title: 'Commit', detail: 'commit のみ（push なし）' },
   ],
@@ -22,8 +22,10 @@ const CFG = {
   repo: 'ease-rental-help',
   build: 'npm run build（エラー0・総ページ数が減っていないことを確認）',
   test: 'build 通過のみ（md 中心のため）',
-  antiPatterns: null,
+  // このリポは .claude/skills・.claude/rules とも 0 件（2026-07-28 実測）。スキャン対象スクリプトも無い。
+  scans: [],
   surveyRefs: 'backend atlas との照合: /Volumes/2TB-Speed/Users/takahashiisao/git/ease-rental-backend/.claude/knowledge/atlas/<group>.md（仕様の真実は atlas 側。ページ→atlas 対応は memory docs-site-location）',
+  reviewRefs: 'backend atlas（仕様の真実）。観点: 記述が実装/atlas と一致しているか・内部リンク切れ・ビルド後の総ページ数が減っていないか・スクリーンショットや UI 名称の古さ',
   domainNote: 'md-only は低リスクだが push=Render 即本番反映。仕様記述（status/料率/フロー）は atlas・実装と一致させる（推測で書かない）',
   neverAdd: 'dist/**',
   pushNote: 'git push は絶対にしない（push=即本番のため人間承認必須）',
@@ -113,6 +115,20 @@ ${issue.title ? `[issue] ${issue.title}` : ''}${issue.sev ? `\n[sev(指定済み
 schema で返す。`
 }
 
+function scanStep(issue) {
+  const scans = CFG.scans || []
+  if (!scans.length) return '6. スキャンなし（このリポは対象スクリプトが無い）→ antiPatternPass は true 固定'
+  const lines = scans.map((s, i) => {
+    const out = `/tmp/scan-${issue.n}-${s.name}.txt`
+    return `   ${i + 1}) [${s.name}] ${s.cmd} > ${out} 2>&1; echo "EXIT=$?"; tail -30 ${out}`
+  })
+  return `6. スキャン（⚠️ パイプ禁止 — \`| tail\` だと $? が tail の終了コードを拾って偽陰性になる）。1件ずつ実行:
+${lines.join('\n')}
+   ⚠️ antiPatternPass=false にするのは「**今回自分が変更したファイル**に新規ヒットが出た場合」だけ。
+   これらは repo 全体を走査するため既存ベースラインのヒットが常に出る。
+   それらは false にしない（changedFiles が空なら必ず true）。ベースライン分は followUps にも入れない。`
+}
+
 function fixPrompt(issue, survey, findings, round) {
   return `issue-batch / Fix+Verify for issue #${issue.n} (round ${round})（repo: ${CFG.repo}）
 [issue] ${survey.title}
@@ -127,11 +143,7 @@ function fixPrompt(issue, survey, findings, round) {
 3. 自分の変更分のみ git add 対象として把握（⚠️絶対 add しない: ${CFG.neverAdd}・自分が触っていない既存の未 commit 変更）。
 4. 検証: ${CFG.build}
 5. ${CFG.test}
-${CFG.antiPatterns ? `6. anti-pattern scan（⚠️ パイプ禁止 — \`| tail\` だと $? が tail の終了コードを拾って偽陰性になる）:
-   ${CFG.antiPatterns} > /tmp/ap-\${issue.n}.txt 2>&1; echo "EXIT=$?"; tail -30 /tmp/ap-\${issue.n}.txt
-   ⚠️ antiPatternPass=false にするのは「**今回自分が変更したファイル**に新規 P0/P1 が出た場合」だけ。
-   このスクリプトは repo 全体を走査するため既存ベースラインのヒットが常に出る。
-   それらは false にしない（changedFiles が空なら必ず true）。` : '6. antiPatternPass は true 固定（このリポに scan なし）'}
+${scanStep(issue)}
 
 schema で返す。buildPass 必須・失敗時は errors に最初の3件。skipped=true は着手不能時のみ（skipReason 必須）。`
 }
@@ -147,7 +159,7 @@ function codexReviewPrompt(issue, survey, round) {
    COMPANION="$(ls -d ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs | sort -Vr | head -1)"
    [ -z "$COMPANION" ] && { echo '{"result":{"verdict":null,"error":"companion not found"}}'; exit 0; }
    node "$COMPANION" adversarial-review --json --scope working-tree -m gpt-5.6-${m} \\
-     "focus: issue=#${issue.n} ${survey.title} / 変更=git diff(working-tree) / 観点=${CFG.domainNote} / severity は P0(即修正必須)/P1(merge前修正)/P2(follow-up可) を厳密に区別すること"
+     "focus: issue=#${issue.n} ${survey.title} / 変更=git diff(working-tree) / 観点=${CFG.domainNote} / このリポの規範（必要なら読む）=${CFG.reviewRefs} / severity は P0(即修正必須)/P1(merge前修正)/P2(follow-up可) を厳密に区別すること"
 2. stdout(JSON) の result.verdict を読む。approve / needs-attention(+findings[] を severity/file/issue/suggestion で整理) / null・parseError→codex-unavailable（他ツールへのフォールバック禁止）。
 
 schema で返す。`
