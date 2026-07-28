@@ -127,7 +127,11 @@ function fixPrompt(issue, survey, findings, round) {
 3. 自分の変更分のみ git add 対象として把握（⚠️絶対 add しない: ${CFG.neverAdd}・自分が触っていない既存の未 commit 変更）。
 4. 検証: ${CFG.build}
 5. ${CFG.test}
-${CFG.antiPatterns ? `6. anti-pattern scan: ${CFG.antiPatterns} → exit 0 なら antiPatternPass=true` : '6. antiPatternPass は true 固定（このリポに scan なし）'}
+${CFG.antiPatterns ? `6. anti-pattern scan（⚠️ パイプ禁止 — \`| tail\` だと $? が tail の終了コードを拾って偽陰性になる）:
+   ${CFG.antiPatterns} > /tmp/ap-\${issue.n}.txt 2>&1; echo "EXIT=$?"; tail -30 /tmp/ap-\${issue.n}.txt
+   ⚠️ antiPatternPass=false にするのは「**今回自分が変更したファイル**に新規 P0/P1 が出た場合」だけ。
+   このスクリプトは repo 全体を走査するため既存ベースラインのヒットが常に出る。
+   それらは false にしない（changedFiles が空なら必ず true）。` : '6. antiPatternPass は true 固定（このリポに scan なし）'}
 
 schema で返す。buildPass 必須・失敗時は errors に最初の3件。skipped=true は着手不能時のみ（skipReason 必須）。`
 }
@@ -219,7 +223,12 @@ for (const issue of ISSUES) {
     })
     if (!lastFix || lastFix.skipped) { verdict = 'fix-skipped'; break }
 
-    if (!lastFix.buildPass || lastFix.testPass === false || lastFix.antiPatternPass === false) {
+    // ⚠️ 変更ファイル0件のラウンドで anti-pattern gate を効かせない。
+    //    scan は repo 全体を見るので既存ベースラインで常に false になり、
+    //    「直すものが無いのに再修正ラウンド」を上限まで空焼きする（2026-07-28 実測・$8 の無駄）。
+    const changedCount = (lastFix.changedFiles || []).length
+    const antiPatternBlocks = changedCount > 0 && lastFix.antiPatternPass === false
+    if (!lastFix.buildPass || lastFix.testPass === false || antiPatternBlocks) {
       findings = [{ severity: 'P0', issue: lastFix.errors || lastFix.testDetails || 'build/test/anti-pattern failed' }]
       verdict = 'needs-attention'
       log(`#${issue.n} r${rounds} verify failed → re-fix（codex スキップ）`)
