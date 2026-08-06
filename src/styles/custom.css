@@ -88,3 +88,90 @@ html.dev-mode [data-dev-only] > span::after {
   font-size: var(--sl-text-xs);
   color: var(--sl-color-gray-3);
 }
+
+/* --- Delivery cancellation fee calculator (.cancel-calc) --- */
+.cancel-calc {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+}
+
+.cancel-calc__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.cancel-calc__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: var(--sl-text-sm);
+  font-weight: 600;
+}
+
+.cancel-calc__input {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.35rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font-size: var(--sl-text-sm);
+  font-family: inherit;
+  min-width: 9rem;
+}
+
+.cancel-calc__btn {
+  display: inline-block;
+  margin-bottom: 0.85rem;
+  padding: 0.45rem 1.1rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: var(--sl-color-accent);
+  color: var(--sl-color-white, #fff);
+  font-size: var(--sl-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-calc__btn:hover {
+  background: var(--sl-color-accent-high);
+}
+
+.cancel-calc__result {
+  border-left: 3px solid var(--sl-color-accent);
+  background: var(--sl-color-accent-low);
+  border-radius: 0.35rem;
+  padding: 0.6rem 0.9rem;
+  min-height: 1.5rem;
+}
+
+.cancel-calc__result:empty {
+  display: none;
+}
+
+.cancel-calc__result .cc-line {
+  margin: 0.15rem 0;
+}
+
+.cancel-calc__result .cc-charge {
+  font-size: 1.05em;
+  color: var(--sl-color-accent-high);
+}
+
+.cancel-calc__result .cc-diff {
+  color: var(--sl-color-gray-3);
+  font-size: 0.85em;
+}
+
+.cancel-calc__result .cc-warn {
+  color: #b91c1c;
+}
+
+.cancel-calc__note {
+  margin-top: 0.7rem;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}

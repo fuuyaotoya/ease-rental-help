@@ -128,6 +128,102 @@ function calculateDailyRate(basePrice, days) {
 | **前日** | **30%** |
 | **当日 / 開始後** | **100%** |
 
+#### 配送キャンセル料 計算機
+
+キャンセル日・レンタル開始日・配送料を入力すると、配送キャンセル料が自動計算されます（営業日ベース・#719 料率）。システムの実計算（Backend `calcCancelDaysBefore`・Issue #2163）と同じルールで見積もれます。
+
+<div class="cancel-calc">
+  <div class="cancel-calc__row">
+    <label class="cancel-calc__label">レンタル開始日
+      <input type="date" id="cc-start" class="cancel-calc__input" />
+    </label>
+    <label class="cancel-calc__label">キャンセル日
+      <input type="date" id="cc-cancel" class="cancel-calc__input" />
+    </label>
+    <label class="cancel-calc__label">配送料（円）
+      <input type="number" id="cc-fee" class="cancel-calc__input" min="0" step="100" inputmode="numeric" placeholder="例: 1500" />
+    </label>
+  </div>
+  <button type="button" id="cc-calc" class="cancel-calc__btn">キャンセル料を計算</button>
+  <div id="cc-result" class="cancel-calc__result" aria-live="polite"></div>
+  <p class="cancel-calc__note">※ 営業日 ＝ <strong>日曜・祝日・年末年始（12/29〜1/3）を除外</strong>し、<strong>土曜は営業日</strong>として数えます。祝日が挟まると思いより早く料率が上がることがあります（暦日との差に注意）。</p>
+</div>
+
+<script is:inline>
+(() => {
+  // Japanese public holidays 2026-2027. The production system uses a per-shop
+  // holiday master; these standard dates approximate it for estimation.
+  const HOLIDAYS = new Set([
+    '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-21','2026-04-29',
+    '2026-05-04','2026-05-05','2026-05-06',
+    '2026-07-20','2026-08-11','2026-09-21','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
+    '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-22','2027-04-29',
+    '2027-05-03','2027-05-04','2027-05-05',
+    '2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
+  ]);
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const isYearEnd = (d) => {
+    const m = d.getMonth() + 1, day = d.getDate();
+    return (m === 12 && day >= 29) || (m === 1 && day <= 3);
+  };
+  const isBusinessDay = (d) => {
+    if (d.getDay() === 0) return false;        // Sunday
+    if (isYearEnd(d)) return false;            // 12/29 - 1/3
+    if (HOLIDAYS.has(fmt(d))) return false;    // public holiday
+    return true;
+  };
+  const addDays = (d, n) => { const r = new Date(d.getTime()); r.setDate(r.getDate() + n); return r; };
+  // inclusive business-day count over [from, to]; from > to => 0 (mirrors BE calculateBusinessDays).
+  const businessDaysInclusive = (from, to) => {
+    if (from.getTime() > to.getTime()) return 0;
+    let count = 0, d = new Date(from.getTime()), guard = 0;
+    while (d.getTime() <= to.getTime() && guard < 400) {
+      if (isBusinessDay(d)) count++;
+      d = addDays(d, 1);
+      guard++;
+    }
+    return count;
+  };
+  const yen = (n) => '¥' + Math.round(n).toLocaleString('ja-JP');
+
+  const calc = () => {
+    const startEl = document.getElementById('cc-start');
+    const cancelEl = document.getElementById('cc-cancel');
+    const feeEl = document.getElementById('cc-fee');
+    const result = document.getElementById('cc-result');
+    if (!startEl || !cancelEl || !feeEl || !result) return;
+    const start = startEl.value, cancel = cancelEl.value, feeRaw = feeEl.value;
+    if (!start || !cancel || feeRaw === '') {
+      result.innerHTML = '<span class="cc-warn">レンタル開始日・キャンセル日・配送料をすべて入力してください。</span>';
+      return;
+    }
+    const startDate = new Date(start + 'T00:00:00');
+    const cancelDate = new Date(cancel + 'T00:00:00');
+    const fee = Number(feeRaw);
+    if (Number.isNaN(fee) || fee < 0) {
+      result.innerHTML = '<span class="cc-warn">配送料は 0 以上の数値で入力してください。</span>';
+      return;
+    }
+    // #719 delivery rate, counted back from the rental start in business days.
+    const inclusive = businessDaysInclusive(cancelDate, startDate);
+    const diffDays = inclusive - 1 < 0 ? 0 : inclusive - 1;
+    let rate, label;
+    if (diffDays === 0) { rate = 1.0; label = '当日 / 開始後（100%）'; }
+    else if (diffDays === 1) { rate = 0.3; label = '前日（30%）'; }
+    else { rate = 0; label = '2日前以上（0%）'; }
+    const charge = Math.round(fee * rate);
+    result.innerHTML =
+      '<div class="cc-line">キャンセル時期（開始日までの営業日）: <strong>' + label +
+      '</strong> <span class="cc-diff">（営業日差 ' + diffDays + '日）</span></div>' +
+      '<div class="cc-line">配送料 ' + yen(fee) + ' × ' + (rate * 100) + '% ＝ ' +
+      '<strong class="cc-charge">' + yen(charge) + '</strong></div>';
+  };
+  const btn = document.getElementById('cc-calc');
+  if (btn) btn.addEventListener('click', calc);
+})();
+</script>
+
 ### 計算の対象
 
 - **商品レンタル料:** 商品ごとの `totalPrice`（単価 × 日数）に上記料率を適用
@@ -153,11 +249,19 @@ function calculateDailyRate(basePrice, days) {
 
 | キャンセルの種類 | 対象 | 商品レンタル料の料率 | 配送料の扱い |
 |---|---|---|---|
-| **伝票全体のキャンセル** | 伝票の全商品 | 全商品に商品料率（上記「料率表」）を適用 | 非クレカは請求額に含めて精算／クレカは DO②（配送料請求）で別途回収 |
+| **伝票全体のキャンセル** | 伝票の全商品 | 全商品に商品料率を適用。「レンタル料を0円にする」選択も可（[#1314](https://github.com/iziz-system/ease-rental-frontend/issues/1314)・**配送料は0円化の対象外**） | まだアクティブ（キャンセルされていない）配送料に **#719 料率（当日100%/前日30%）** を適用して請求額へ折り込み（BE [#2506](https://github.com/iziz-system/ease-rental-backend/issues/2506)）。クレカは DO②で別途回収 |
 | **商品の部分キャンセル** | 伝票の特定商品のみ | キャンセルした商品に商品料率を適用（残商品は影響なし） | 影響なし |
 | **配送のキャンセル** | 配送のみ | 影響なし | キャンセルした配送に配送キャンセル料率（上記「配送キャンセル料」）を適用（クレカは DO⑤・後払い伝票は DO① charges に統合 [#2399](https://github.com/iziz-system/ease-rental-backend/issues/2399)） |
 
 > **ポイント:** 料率は「キャンセルする人」（管理者・顧客）で変わりません。変わるのは**伝票の状態**（仮予約=無料 / 確定済み=課金）と**キャンセルの範囲**（全体・部分・配送のみ）です。
+
+:::note[伝票全体キャンセル時の保護・警告（2026-07改定）]
+伝票全体をキャンセルする際、システムは以下を順に表示・適用します:
+- **キャンセル料の事前警告ダイアログ**（[#2462](https://github.com/iziz-system/ease-rental-backend/issues/2462)）— レンタル開始済み伝票はキャンセル料の概算を事前表示
+- **残アクティブ配送料の警告**（[#1320](https://github.com/iziz-system/ease-rental-frontend/issues/1320)）— まだキャンセルされていない配送がある場合、その配送料にも #719 料率のキャンセル料が発生することを警告
+- **配送キャンセルの全明細確認**（[#1315](https://github.com/iziz-system/ease-rental-frontend/issues/1315)）— 配送キャンセル時、無音で破棄せず全明細キャンセル前に確認警告を表示
+- **レンタル料0円（waive）を選んでも配送料は別途課金** — 配送料は #719 料率で別途回収されるため、0円化の対象外（[#1314](https://github.com/iziz-system/ease-rental-frontend/issues/1314)）
+:::
 
 ### 伝票の状態による無料・課金の区別
 
