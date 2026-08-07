@@ -26,6 +26,7 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 | `/booking-compact`               | 新規伝票作成（初期状態） | 通常の伝票作成開始   |
 | `/booking-compact?product={sku}` | 商品を指定して伝票作成   | 商品ページからの遷移 |
 | `/booking-compact?customer={id}` | 顧客を指定して伝票作成   | 顧客ページからの遷移 |
+| `/booking-compact?id={id}` | 既存伝票を編集モードで開く | 伝票詳細からの直接遷移・旧URL `/bookings/{id}` からのリダイレクト（[#1306](https://github.com/iziz-system/ease-rental-frontend/issues/1306)） |
 
 ### 伝票検索
 

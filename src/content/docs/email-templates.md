@@ -153,6 +153,7 @@ ${invoiceUrl}
 **HTML版の特記事項（#2359・#2370）:**
 - 商品画像がある場合（`items.some(item => !!item.imageUrl)`）、`【ご予約商品】`セクションを商品写真テーブル（`buildProductListHtml`）に置換（#2359）。画像1枚もない場合は従来テキスト版（#2055）。
 - ガイド行の「ご利用ガイド」を `<a href="${BOOKING_ADDITION_GUIDE_URL}" style="color:#0066cc;text-decoration:underline;">ご利用ガイド</a>` アンカーに置換（#2370）。
+- Thunderbird・Outlook系（Wordレンダリングエンジン）ではCSS `max-width` が効かず商品画像が原寸で表示されてレイアウトが崩れるのを防ぐため、HTML属性でサイズ固定する二重防御をとっています（[#2359](https://github.com/iziz-system/ease-rental-backend/issues/2359)）。Gmail は自前で画像リサイズするため影響を受けません。
 
 **本文（メイン）:**
 ```
