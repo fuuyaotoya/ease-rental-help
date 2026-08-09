@@ -300,6 +300,7 @@ CANCELLED → CANCELLED
 
 - [延長料金計算ルール](/appendix/fee-calculation/)
 - [URL直接アクセスパターン](/appendix/url-patterns/)
+- [キャンセル操作と Shopify 注文の同期](/appendix/cancellation-shopify-sync/)
 - Backend Issue: iziz-system/ease-rental-backend#980
 - Frontend Issue: iziz-system/ease-rental-frontend#470
 :::
