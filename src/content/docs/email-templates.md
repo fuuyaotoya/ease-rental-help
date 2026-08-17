@@ -116,7 +116,7 @@ bank_transfer:
 【お支払いについて】
 お客様は銀行振込でのお支払いとなります。
 月末締めの請求書を別途お送りいたしますので、記載の期日までにお振込みください。
-※ご返却があった月末で締めさせていただきます。例)7/30貸出→8/1返却の場合是8月末締めになります。
+※ご返却があった月末で締めさせていただきます。例)7/30貸出→8/1返却の場合は8月末締めになります。
 ```
 
 cash / store_payment:
@@ -170,6 +170,7 @@ ${invoiceUrl}
 
 【ご予約商品】
 （商品ごとに1行）  ・${productName}（数量: ${quantity}）
+（SKU がある場合は行末に付与）  ・${productName}（数量: ${quantity}） SKU: ${sku}
 （商品がない場合）  ・(商品情報なし)
 
 （合計金額がある場合）合計金額: ¥${totalAmount}（税込）
@@ -795,12 +796,12 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ## 鮮度・保守
 
-- **最終確認日**: 2026-07-17
-- **対象 BE commit**: `e370aef5`（#2370 ガイドURL修正・#2342 iziz 署名統一・#2359 写真テーブル・#2360 フォーム振分・#2216 税込明記 を反映）
+- **最終確認日**: 2026-08-17
+- **対象 BE commit**: `e7cb5d24`（#2370 ガイドURL修正・#2342 iziz 署名統一・#2359 写真テーブル・#2360 フォーム振分・#2216 税込明記 を反映。2026-08-17 に #1/#7/#8/#12 の本文をコードと逐語照合し、本ページ側の誤記 3 件〔銀行振込セクションの「場合是」→「場合は」・商品行の SKU 欠落・下記 consolidated パスの誤り〕を是正）
 - **本文はコードから手動転記** しています。以下のファイルの本文を変更した際は、本ページの追従が必要です:
   - `src/modules/email/email.service.ts`（各 send メソッドの `text`）
   - `src/modules/invoices/invoices.service.ts`（`generateInvoiceEmailText`）
-  - `src/modules/consolidated-invoices/consolidated-invoices.service.ts`（`generateInvoiceEmailText`）
+  - `src/modules/invoices/consolidated-invoices.service.ts`（`generateInvoiceEmailText`）
   - `src/modules/schedule/invoice-reminder-cron.service.ts`（`generateReminderEmailText` / `generateConsolidatedReminderEmailText`）
   - `src/modules/email/utils/build-billing-greeting.ts`（宛名生成）
 
