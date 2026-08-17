@@ -9,7 +9,7 @@ sidebar:
 > **管理者/開発者向けリファレンス:** 本ページは BE が SMTP 送信するメールの本文テンプレート全文です。`${...}` は実行時に値が埋まる変数。実装（`src/modules/email/email.service.ts` / `invoices.service.ts` / `consolidated-invoices.service.ts` / `invoice-reminder-cron.service.ts`）と1:1で照合できます。本文の変更時は本ページの追従が必要です（末尾「鮮度・保守」参照）。
 :::
 
-バックエンド（BE）は nodemailer + SendGrid SMTP でメールを送信します。本ページは **BE が送信する全メールの本文テンプレート**を網羅します（Shopify が送信する注文確認などは対象外 → [メール送信の責任分界](./appendix/email-responsibility)）。
+バックエンド（BE）は nodemailer + さくらのメールサーバ（SMTP）でメールを送信します。本ページは **BE が送信する全メールの本文テンプレート**を網羅します（Shopify が送信する注文確認などは対象外 → [メール送信の責任分界](./appendix/email-responsibility)）。
 
 本文は `${変数名}` のプレースホルダ付きで記載し、ソースコードと1:1で照合できます。条件付きで表示される行は `（条件の場合）` と注記しています。
 
@@ -28,16 +28,19 @@ BE のメールは **2種類の送信元**を使い分けます。
 
 - `rental-info@` 宛の返信は **監視していません**。顧客からの問い合わせは、本文末尾の iziz 会社署名（メール: `shop@iziz.co.jp`／サイト: http://www.iziz.co.jp）をご案内しています（#2342）。
 - 請求書メールだけ `keiri@iziz.co.jp`（経理専用）から送り、**入金・請求に関する返信が経理チームに届く**ようにしています。
-- 設定は環境変数で上書き可能: `EMAIL_FROM`（送信専用・デフォルト `rental-info@`）/ `INVOICE_EMAIL_FROM`（請求書用・デフォルト `keiri@`）。いずれも SendGrid 認証済み sender である必要があります。
+- 設定は環境変数で上書き可能: `EMAIL_FROM`（送信専用・デフォルト `rental-info@`）/ `INVOICE_EMAIL_FROM`（請求書用・デフォルト `keiri@`）。**本番（Render）は 2026-08-17 に両方を上表のアドレスへ明示設定済み**（#2690 B062）。
 
-:::caution
-`rental-info@iziz.co.jp` と `keiri@iziz.co.jp` はどちらも **SendGrid で認証済み（verified sender）** である必要があります。未認証のアドレスを From にすると SendGrid が送信を拒否します。
+:::caution[env がコードのデフォルトを上書きする — #2690 B062 の実例]
+`EMAIL_FROM` が設定されていると**コードのデフォルト（`rental-info@`）より env が優先**されます。実際、送信専用アドレスへの分岐はコード上 2026-07-10 に実装済みでしたが、本番 env が `EMAIL_FROM=shop@iziz.co.jp` のままだったため、**約1ヶ月間 `shop@`（返信可能なアドレス）から送信され続けていました**。「コードを直した」＝「本番の差出人が変わった」ではありません。
+
+`EMAIL_FROM` **未設定**の場合は起動ログに `EMAIL_FROM is not set — falling back to ...` という警告が出ます（#1997）。逆にこの警告が**出ていない**ことは「env が設定済み」を意味するだけで、**正しい値である保証にはなりません**（値は Render ダッシュボードでの目視確認が必要）。
 :::
 
 ### 送信の仕組み
 
 - ライブラリ: `nodemailer`（`@nestjs-modules/mailer` 不使用）
-- トランスポート: SendGrid SMTP relay（`smtp.sendgrid.net` / user=`apikey`）
+- トランスポート: **さくらのメールサーバ `iziz.sakura.ne.jp:465`（SMTPS）**。認証アカウントは `shop@iziz.co.jp`（`SMTP_USER`）
+- **認証アカウントと差出人（FROM）は別で構いません。** 認証は `shop@`、差出人は `rental-info@` / `keiri@` という構成で送信できることを実測確認済み（2026-08-17・同一 `iziz.co.jp` ドメイン内）
 - master switch: `EMAIL_ENABLED`（`false` で全メール送信スキップ・`email_logs.status='skipped_disabled'` 記録）
 - 送信履歴: `email_logs` テーブルに subject / recipient / status / email_type を全件記録
 
