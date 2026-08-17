@@ -417,7 +417,7 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ### 8. 統合（まとめ）請求書（consolidated-invoices.service generateInvoiceEmailText）
 
-- **件名**: `【請求書】${getCompanyName()} ${monthFormatted}分`
+- **件名**: `【EASE Rental】${getCompanyName()} ${monthFormatted}分 請求書送付のご案内`（#2690 B067。`getCompanyName()` は**送付元＝自社**の会社名。宛先の会社名ではない）
 - **FROM**: `keiri@iziz.co.jp`（経理専用）
 - **email_type**: `invoice`
 - **トリガー**: 月次統合請求書送信操作時（API）/ 月次バッチ cron
@@ -426,17 +426,14 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 ```
 ${greeting}
 
-平素よりお世話になっております。
-${ourCompanyName}です。
+いつも大変お世話になっております。
+レンタルSHOP EASEです。
 
-下記の通り、月次統合請求書をお送りいたします。
-添付のPDFをご確認のうえ、お支払いをお願いいたします。
+${monthFormatted}ご利用(ご返却)分の請求書をメール添付にてお送りいたします。
+内容をご確認の上、期日までにお振込みいただきますよう宜しくお願いいたします。
 
-請求月: ${monthFormatted}
-
-ご不明点がございましたら、お気軽にお問い合わせください。
-
-よろしくお願いいたします。
+ご不明点などございましたらお問い合わせくださいませ。
+今後とも何卒宜しくお願い申し上げます。
 
 □■--------------------------------------------------------------
 〒141-0031 東京都品川区西五反田3-1-1
@@ -447,7 +444,11 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 休業日: 日・祝
 ```
 
-**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_department` / `billing_contact_name`）, `${ourCompanyName}`（`getCompanyName()`）, `${monthFormatted}`（`${year}年${month.padStart(2,'0')}月`・例: `2026年01月`）
+**変数**: `${greeting}`（buildBillingGreeting の出力・引数は `consolidated_invoices` snapshot の `billing_company_name` / `billing_department` / `billing_contact_name`）, `${monthFormatted}`（`${year}年${month.padStart(2,'0')}月`・例: `2026年01月`）
+
+:::caution[件名と本文で名乗りが異なります（#2690 B067/B068・EASE 様確認中）]
+**件名**は `getCompanyName()`＝法人名「有限会社ピーセス」、**本文**は屋号「レンタルSHOP EASE」を名乗ります（#2690 B068 で本文のみ屋号指定に変更したため）。env `COMPANY_NAME` は請求書 PDF の発行者名と共有のため変更していません（PDF は法人名が正）。件名側を屋号に揃えるかは EASE 様へ確認中。
+:::
 
 ### 9. 単票（個別）請求書の再請求リマインダー（invoice-reminder-cron generateReminderEmailText）
 
