@@ -291,8 +291,11 @@ sidebar:
    - 銀行口座情報（銀行名、支店名、口座種別、口座番号、口座名義）
    - 支払サイト（日数）、法人番号、CCメール
    - 請求タイプ（個人/部署）、メモ
+   - **まとめ請求対象**（月次まとめ請求に含める・個別送信しない）（[#1366](https://github.com/iziz-system/ease-rental-frontend/issues/1366)）
    - 備考
 4. **保存** をクリック
+
+> **💡 まとめ請求対象チェック（[#1366](https://github.com/iziz-system/ease-rental-frontend/issues/1366)）:** 「まとめ請求対象」にチェックを入れた請求先は、月次のまとめ請求（[会社まとめ請求](/consolidated-invoices/)）に含まれ、個別の請求書送信対象から除外されます。チェックは保存後も維持されます。
 
 > **自動デフォルト化（#1096）:** 顧客に請求先が1件も登録されていない状態で新規請求先を作成すると、その請求先が自動的にデフォルトに設定されます。また、ある請求先をデフォルトにすると、以前のデフォルトは自動的に解除されます（常に1件のみデフォルト）。
 
@@ -341,6 +344,7 @@ sidebar:
 | payment_site_days      | paymentSiteDays         | 支払サイト日数（旧・読取専用） | -    |
 | invoice_cc_emails      | invoiceCcEmails         | CCメール（カンマ区切り）     | -    |
 | billing_type           | billingType             | 請求タイプ（個人/部署）      | -    |
+| consolidated_billing_enabled | consolidatedBillingEnabled | まとめ請求対象（月次まとめ請求に含める） | - |
 | is_default             | isDefault               | デフォルト設定               | -    |
 | special_notes          | specialNotes            | 備考                         | -    |
 

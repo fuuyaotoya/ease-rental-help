@@ -330,7 +330,7 @@ Shopify注文が紐づいている伝票（銀行振込でShopify Draft Order→
 | 操作 | 説明 |
 | ---- | ---- |
 | 料金種別でフィルター | ドロップダウンでDO②/DO③を絞り込み |
-| 伝票番号をクリック | 伝票詳細ページ（`/booking-compact`）に遷移 |
+| 伝票番号をクリック | 伝票詳細ページ（`/booking-compact`）に遷移（閲覧モードで開きます・[#1361](https://github.com/iziz-system/ease-rental-frontend/issues/1361)） |
 | 「下書き注文」リンクをクリック | Shopify管理画面の該当Draft Orderを新しいタブで開く |
 | ページネーション | 前へ/次へで移動（1ページ50件） |
 
