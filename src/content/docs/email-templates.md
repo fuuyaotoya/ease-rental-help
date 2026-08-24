@@ -197,121 +197,18 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 **変数**: `${customerName}`, `${slipNumber}`, `${startDate}`, `${endDate}`, `${productName}`, `${quantity}`, `${totalAmount}`, `${invoiceUrl}`, `${deliveryTypeLabel}`, `${destinationName}`, `${address}`, `${phone}`, `${deliveryDate}`, `${timeWindow}`
 
-### 2. 仮予約確定通知（sendTentativeConfirmedNotification）
+### 2〜4. 仮予約確定通知・仮予約リマインダ・最終リマインダ（廃止）
 
-- **件名**: `【EASE Rental】仮予約が確定になりました`
-- **FROM**: `rental-info@iziz.co.jp`（送信専用）
-- **email_type**: `tentative_confirmed`
-- **トリガー**: 仮予約が確定になった時（`ENABLE_TENTATIVE_CONFIRM_MAIL=true` のみ送信・デフォルト false）
-
-```
-（customerNameがある場合）${customerName} 様
-（customerNameがない場合）お客様
-
-いつもEASE Rentalをご利用いただきありがとうございます。
-
-以下のご予約（${resolveDisplayId(slipNumber, bookingId)}）について、仮予約が確定となりましたのでお知らせいたします。
-
-【確定内容】
-（商品ごとに1行）  ・${productName}（数量: ${quantity}、期間: ${period}）
-確定日時: ${confirmedAt}
-
-引き続きよろしくお願いいたします。
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-□■--------------------------------------------------------------
-〒141-0031 東京都品川区西五反田3-1-1
-TEL: 03-5759-8266　FAX: 03-5759-8262
-サイト: http://www.iziz.co.jp
-メールアドレス: shop@iziz.co.jp
-営業時間: 9:30～18:00(月～金)・9:30～17:00(土)
-休業日: 日・祝
-```
-
-**変数**: `${customerName}`, `${slipNumber}`, `${bookingId}`, `${productName}`, `${quantity}`, `${period}`, `${confirmedAt}`
-
-### 3. 仮予約リマインダ（sendDraftBookingReminder）
-
-- **件名**: `【EASE Rental】ご予約のお支払いのご案内（レンタル開始${daysUntilStart}日前）`
-- **FROM**: `rental-info@iziz.co.jp`（送信専用）
-- **email_type**: `reminder`
-- **トリガー**: 仮予約の支払督促（`draft-booking-lifecycle` cron・毎日2時）
-
-```
-（customerNameがある場合）${customerName} 様
-（customerNameがない場合）お客様
-
-いつもEASE Rentalをご利用いただきありがとうございます。
-
-以下のご予約（${resolveDisplayId(slipNumber, bookingId)}）について、お支払いが確認できておりません。
-
-【ご予約内容】
-（商品ごとに1行）  ・${productName}（数量: ${quantity}、期間: ${period}）
-レンタル開始日: ${startDate}
-（合計金額がある場合）ご請求金額: ${formatYen(totalAmount)}（税込）
-
-※ レンタル開始日の7日前（午前2時）までにお支払いが確認できない場合、
-  ご予約は自動的にキャンセルとなりますのでご注意ください。
-
-お支払い方法やご不明な点がございましたら、お気軽にお問い合わせください。
-
-□■--------------------------------------------------------------
-〒141-0031 東京都品川区西五反田3-1-1
-TEL: 03-5759-8266　FAX: 03-5759-8262
-サイト: http://www.iziz.co.jp
-メールアドレス: shop@iziz.co.jp
-営業時間: 9:30～18:00(月～金)・9:30～17:00(土)
-休業日: 日・祝
-```
-
-**変数**: `${customerName}`, `${slipNumber}`, `${bookingId}`, `${productName}`, `${quantity}`, `${period}`, `${startDate}`, `${formatYen(totalAmount)}`, `${daysUntilStart}`
-
-### 4. 最終リマインダ（sendFinalReminderBeforeAutoCancel）
-
-- **件名**: `【EASE Rental】【重要】ご予約が明日自動キャンセルされます`
-- **FROM**: `rental-info@iziz.co.jp`（送信専用）
-- **email_type**: `reminder`
-- **トリガー**: 自動キャンセル前日（レンタル開始7日前・`draft-booking-lifecycle` cron）
-
-```
-（customerNameがある場合）${customerName} 様
-（customerNameがない場合）お客様
-
-いつもEASE Rentalをご利用いただきありがとうございます。
-
-【重要】以下のご予約について、明日自動キャンセルが実行される予定です。
-
-【ご予約内容】
-（伝票番号がある場合）伝票番号: ${slipNumber}
-レンタル品目: ${itemName}
-レンタル開始日: ${startDate}
-自動キャンセル予定日: ${cancelDate}
-
-${paymentInstruction}
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-□■--------------------------------------------------------------
-〒141-0031 東京都品川区西五反田3-1-1
-TEL: 03-5759-8266　FAX: 03-5759-8262
-サイト: http://www.iziz.co.jp
-メールアドレス: shop@iziz.co.jp
-営業時間: 9:30～18:00(月～金)・9:30～17:00(土)
-休業日: 日・祝
-```
-
-`${paymentInstruction}` は銀行振込可否で分岐:
-- 銀行振込可（`isBankTransferAllowed=true`）: `自動キャンセルはされませんが、早期のお支払いをお願いいたします。`
-- それ以外: `お支払いまたはご連絡をお願いいたします。`
-
-**変数**: `${customerName}`, `${slipNumber}`, `${itemName}`, `${startDate}`, `${cancelDate}`, `${paymentInstruction}`
+:::note[廃止: 督促・自動キャンセル系の顧客宛メール（#2692）]
+旧 #2「仮予約確定通知（sendTentativeConfirmedNotification）」・旧 #3「仮予約リマインダ（sendDraftBookingReminder）」・旧 #4「最終リマインダ（sendFinalReminderBeforeAutoCancel）」の3種は、EASE 指定（2026-08-13・九鬼・マスト）により送信不要化され、`d715134e`（feat #2692 B071）で**コードごと撤去**されました（env での無効化ではなく dead code を残さない方針）。`draft-booking-lifecycle` の毎日 02:00 cron（Phase1-3・sendPaymentReminders / sendFinalReminders / autoCancelExpiredDraftBookings ほか約625行）も撤去済みで、env `DRAFT_AUTO_CANCEL_DAYS_BEFORE` / `ENABLE_TENTATIVE_CONFIRM_MAIL` も削除済み。現在は送信されません。
+:::
 
 ### 5. キャンセル通知（sendAutoCancelNotification）
 
 - **件名**: `【EASE Rental】ご予約の自動キャンセルのお知らせ`（自動）/ `【EASE Rental】ご予約のキャンセルのお知らせ`（手動・`isManual`）
 - **FROM**: `rental-info@iziz.co.jp`（送信専用）
 - **email_type**: `auto_cancel`
-- **トリガー**: 仮予約の自動キャンセル（cron）/ 手動キャンセル
+- **トリガー**: **スタッフ手動キャンセル（#1318）専用** — cron による自動キャンセルは #2692 で撤去。本番 `email_logs` の auto_cancel 4件は全て手動文面（`isManual`）で、cron 停止後の発生のみ
 
 ```
 （customerNameがある場合）${customerName} 様
@@ -451,6 +348,34 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 :::caution[件名と本文で名乗りが異なります（#2690 B067/B068・EASE 様確認中）]
 **件名**は `getCompanyName()`＝法人名「有限会社ピーセス」、**本文**は屋号「レンタルSHOP EASE」を名乗ります（#2690 B068 で本文のみ屋号指定に変更したため）。env `COMPANY_NAME` は請求書 PDF の発行者名と共有のため変更していません（PDF は法人名が正）。件名側を屋号に揃えるかは EASE 様へ確認中。
+:::
+
+### 8b. まとめ領収書（consolidated-invoices.service generateReceiptEmailText・#2707/#2385）
+
+- **件名**: `【領収書】${getCompanyName()} ${monthFormatted}分`（例: `【領収書】有限会社ピーセス 2026年08月分`）
+- **FROM**: `keiri@iziz.co.jp`（請求書と同じ・`sendInvoice` を再利用して送信）
+- **email_type**: `receipt`（#2707 で追加 — `consolidated_invoice_id` + `email_type='receipt'` で email_logs に記録され、請求書の再送 gate とは独立）
+- **添付**: `${monthFormatted}分_まとめ領収書.pdf`
+- **トリガー**: まとめ請求の**全伝票の入金完了時に自動発行**。手動送信 EP（`POST /consolidated-invoices/:id/receipt/send`）もあり
+
+```
+${greeting}
+
+平素よりお世話になっております。
+${ourCompanyName}です。
+
+${monthFormatted}分のご入金を確認いたしました。
+まとめ領収書を添付いたしますので、ご査収ください。
+
+ご不明点がございましたら、お気軽にお問い合わせください。
+
+よろしくお願いいたします。
+```
+
+**変数**: `${greeting}`（buildBillingGreeting の出力）, `${monthFormatted}`, `${ourCompanyName}` = `getCompanyName()`（env `COMPANY_NAME` or 法人名「有限会社ピーセス」）。件名・本文とも法人名で一致（#8 のような件名/本文の名乗り違いは無い）
+
+:::note[#8 の屋号名乗りを取り込んでいない（follow-up 候補）]
+#8 まとめ請求書の本文は #2690 B068 で屋号「レンタルSHOP EASE」のハードコードに変更されましたが、まとめ領収書（#2385 実装）は `${getCompanyName()}` のままです。同一顧客が両方受信すると名乗りが「レンタルSHOP EASE」（請求書）と「有限会社ピーセス」（領収書）で変わります。屋号への統一要否は EASE 様確認が必要。
 :::
 
 ### 9. 単票（個別）請求書の再請求リマインダー（invoice-reminder-cron generateReminderEmailText）
@@ -602,6 +527,31 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ---
 
+## スタッフ・店側通知
+
+### FE管理画面経由の伝票作成通知（sendShopBookingCreatedNotification・#2698）
+
+- **件名**: `【EASE Rental】予約が登録されました（${displayId}）`（`displayId` = 伝票番号・未採番なら bookingId）
+- **FROM**: `rental-info@iziz.co.jp`（送信専用）
+- **email_type**: `shop_booking_created`
+- **トリガー**: FE 管理画面から伝票作成時。Shopify Order が作られない経路のため、このメールが店側への唯一の通知を担う（#2698 で追加）
+
+```
+FE管理画面から伝票が作成されました。
+（Shopify Order が作られない経路のため、このメールが店側への通知を担います）
+
+【予約内容】
+伝票番号: ${slipNumber ?? （未採番）}
+顧客名: ${customerName ?? （未入力）}
+支払方法: ${paymentLabel ?? （未入力）}
+貸出期間: ${startDate} 〜 ${endDate}（未入力）
+合計金額: ${formatYen(totalAmount)}（税込）（未確定）
+```
+
+**変数**: `${displayId}`, `${slipNumber}`, `${customerName}`, `${paymentLabel}`（`PAYMENT_METHOD_LABELS` で日本語ラベル化）, `${startDate}`, `${endDate}`, `${totalAmount}`（未確定なら「（未確定）」）
+
+---
+
 ## 管理者アラート（sendAdminAlert）
 
 - **件名**: `【EASE Rental Alert】${subject}`（引数 `subject` の先頭に prefix 付与）
@@ -733,6 +683,8 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 - **トリガー**: 注文確定時（Shopify 決済完了）
 
+**冒頭文案**: `ご予約を承りました。`（**全配送手段共通**・#2688① で統一）。かつては pick-up「受取準備が整いましたらメールが届きます。」/ shipping「準備が整いましたらご連絡いたします。」等に分岐していましたが、準備完了メール・配送前連絡を送る仕組みは Shopify/BE 両方に存在しないため、実在しない後続メールを予告しない文案へ #2688 で統一・分岐廃止。同 issue で「配達予定〇月〇日」表示（Shopify 自動計算・実配送日と無関係）も削除済み。
+
 **宛名**（個人/法人を `customer.last_name` の「・」有無で判別・#618）:
 - 法人: `会社名 部署 担当者名 様`（部署なし場合は `会社名 担当者名 様`）
 - 個人: `担当者名 様`
@@ -756,12 +708,18 @@ TEL: 03-5759-8266　FAX: 03-5759-8262
 
 ## 鮮度・保守
 
-- **最終確認日**: 2026-08-18
-- **対象 BE commit**: `8ce0f2ec`（#2370 ガイドURL修正・#2342 iziz 署名統一・#2359 写真テーブル・#2360 フォーム振分・#2216 税込明記 を反映。2026-08-17 に #1/#7/#8/#12 の本文をコードと逐語照合し、本ページ側の誤記 3 件〔銀行振込セクションの「場合是」→「場合は」・商品行の SKU 欠落・下記 consolidated パスの誤り〕を是正。#2689 で署名の営業時間を 18:00 に、#2690 B065/B066/B069 で #7 の件名・本文と #12 の本文を、#2690 B070〔BE commit `8ce0f2ec`〕で #13 の本文をシンプル受付通知に更新）
+- **最終確認日**: 2026-08-24
+- **対象 BE commit**: `8ce0f2ec` 〜 `efacb6f0`（main HEAD）。2026-08-24 に `8ce0f2ec` 以降のメール関連差分を全調査し反映:
+  - **#2692（`d715134e`）**: 督促・自動キャンセル系の顧客宛メール3種（旧 #2/#3/#4）が EASE 指定でコードごと撤去 → 廃止 note に置換。#5 キャンセル通知はスタッフ手動（#1318）専用として存続と明記
+  - **#2698（`66d99a2c`）**: FE管理画面経由伝票作成の店側通知（sendShopBookingCreatedNotification）を「スタッフ・店側通知」セクションに新規追加
+  - **#2707/#2385**: まとめ領収書（sendConsolidatedReceipt・generateReceiptEmailText）を #8b として新規追加
+  - **#2688①**: Shopify 注文確認メールの冒頭文案を「ご予約を承りました。」全配送手段共通に統一（分岐廃止・Theme 正本スナップショット同期）
+  - **#2708/#2713/#2714/#2681**（invoice-reminder-cron 620行・invoices.service 390行差分）: 顧客向け文面（#9/#10 の件名・本文・#7/#8 の本文）は**不変**を確認（claim 原子化・terminal ガード・stale sending 対応は管理者向けアラート文面とロジックのみ）
+  - 前回（2026-08-18）までの履歴: #2370 ガイドURL修正・#2342 iziz 署名統一・#2359 写真テーブル・#2360 フォーム振分・#2216 税込明記・#2689 署名営業時間 18:00・#2690 B065/B066/B067/B068/B069/B070
 - **本文はコードから手動転記** しています。以下のファイルの本文を変更した際は、本ページの追従が必要です:
   - `src/modules/email/email.service.ts`（各 send メソッドの `text`）
   - `src/modules/invoices/invoices.service.ts`（`generateInvoiceEmailText`）
-  - `src/modules/invoices/consolidated-invoices.service.ts`（`generateInvoiceEmailText`）
+  - `src/modules/invoices/consolidated-invoices.service.ts`（`generateInvoiceEmailText` / `generateReceiptEmailText`〔まとめ領収書〕）
   - `src/modules/schedule/invoice-reminder-cron.service.ts`（`generateReminderEmailText` / `generateConsolidatedReminderEmailText`）
   - `src/modules/email/utils/build-billing-greeting.ts`（宛名生成）
 
