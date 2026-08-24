@@ -93,7 +93,7 @@ sidebar:
 
 ### PDF印刷（配達表）
 
-配送一覧のPDF（配達表）は A4 1ページ10件・配達順（左端太字）で印刷されます。フォント9pt・カード式レイアウトで、右上にページ番号が表示されます（[#2561](https://github.com/iziz-system/ease-rental-backend/issues/2561)）。顧客名・現場担当・駐車場/ELV/ポーター情報が1カードにまとめて表示されます。
+配送一覧のPDF（配達表）は A4 1ページ10件・配達順（左端太字）で印刷されます。フォント9pt・カード式レイアウトで、右上にページ番号が表示されます（[#2561](https://github.com/iziz-system/ease-rental-backend/issues/2561)）。顧客名・現場担当・駐車場/エレベーター/PORTER情報が1カードにまとめて表示され、駐車場・エレベーターは「**あり / なし / 不要**」のbadgeで表示されます — エレベーターの「不要」（1階など）も3値で正しく反映されます（[#2711](https://github.com/iziz-system/ease-rental-backend/issues/2711)）。
 
 ---
 

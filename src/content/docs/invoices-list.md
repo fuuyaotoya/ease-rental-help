@@ -246,6 +246,8 @@ sidebar:
 - 領収書が作成される
 - 元の請求書のステータスが「発行済み」になる
 
+> **💡 領収書PDFの仕様（[#2659](https://github.com/iziz-system/ease-rental-backend/issues/2659)・[#2709](https://github.com/iziz-system/ease-rental-backend/issues/2709)）:** 但し書きは「**但 レンタル料として 伝票No ××××××**」形式で伝票番号を記載します。レイアウトは印刷して二つ折りにしたサイズに内容が収まるように調整済みです。
+
 ### 手順8: 再発行
 
 請求書を再発行:

@@ -299,6 +299,8 @@ sidebar:
 
 > **⚠️ キャンセルされない配送の一覧（[#1357](https://github.com/iziz-system/ease-rental-frontend/issues/1357)）:** 伝票全体のキャンセルでは **配送はキャンセルされません**。キャンセル確認モーダルには、取り消されずに残る配送の一覧（配送先・日付・種別・料金）が表示されます。**料金0円の配送（搬入予定など）も一覧に含まれます** — 0円でも物理配送予定として残り続けるため、不要な場合は配送のキャンセルを別途行ってください。
 
+> **💡 キャンセル料の回収（BE [#2715](https://github.com/iziz-system/ease-rental-backend/issues/2715)・[#2710](https://github.com/iziz-system/ease-rental-backend/issues/2710)・[#2703](https://github.com/iziz-system/ease-rental-backend/issues/2703)）:** キャンセル料が発生するキャンセルでは、キャンセル確定時にキャンセル料の Draft Order が作成され、**支払リンク付きの請求メールが顧客へ自動送信**されます（銀行振込・店頭後払いの伝票が対象）。後から支払リンクが必要になった場合は、[請求書・領収書管理](/invoices-list/)の「⋮」メニュー「**支払いURL**」から開けます。
+
 ---
 
 ## 仮押さえ（仮予約）について
