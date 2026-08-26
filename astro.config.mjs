@@ -78,7 +78,6 @@ export default defineConfig({
         {
           label: '請求・入金',
           items: [
-            { label: '請求書作成', slug: 'invoice-create-new' },
             { label: '請求一覧・入金処理', slug: 'invoices-list' },
             { label: '未入金一覧・入金処理', slug: 'payment-management' },
             { label: '返金処理', slug: 'refund' },

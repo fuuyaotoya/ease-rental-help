@@ -197,6 +197,6 @@ Shopifyへ送信前であれば、再度配送料を入力し直すことがで�
 ## 関連
 
 - [返却・金額確定](/bookings-return/) — 追加請求 (Draft Order③) はこちら
-- [請求書作成](/invoice-create-new/)
+- [会社まとめ請求](/consolidated-invoices/)
 - [請求一覧・入金処理](/invoices-list/)
 - [メール送信責任分界](/appendix/email-responsibility/)

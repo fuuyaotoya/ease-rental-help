@@ -82,7 +82,7 @@ sidebar:
 
 ### 銀行振込・現金の場合
 
-伝票に追加を反映し、改めて [請求書作成](/invoice-create-new/) → [請求一覧・入金処理](/invoices-list/) で請求・入金管理を行います。
+伝票に追加を反映し、[請求一覧・入金処理](/invoices-list/) で請求・入金管理を行います（再発行が必要な場合は請求一覧の「再発行」を使用）。
 
 ---
 
@@ -102,5 +102,5 @@ sidebar:
 - [返金処理](/refund/) — 「返金を記録」操作の詳細
 - [返却・金額確定](/bookings-return/) — 延長料・破損料の確定と追加料金請求
 - [配送料確定・Shopify請求](/delivery-fee-shopify-flow/) — 配送料の追加請求（DO②）
-- [請求書作成](/invoice-create-new/) ／ [請求一覧・入金処理](/invoices-list/) — 銀行振込の再請求・入金管理
+- [請求一覧・入金処理](/invoices-list/) — 銀行振込の再請求（再発行）・入金管理
 - [延長料金計算ルール](/appendix/fee-calculation/) — 料金・キャンセル料率の計算根拠
