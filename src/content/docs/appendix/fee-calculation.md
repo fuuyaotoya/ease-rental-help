@@ -1,21 +1,18 @@
 ---
 title: '延長料金計算ルール'
-description: '延長料金計算ルールの操作方法と画面説明'
+description: '延長料金・キャンセル料の計算ルール（営業日ベースの料率表と計算機つき）'
 sidebar:
   order: 102
 ---
 
 
-> **付録:** B
-> **主題:** レンタル延長料金の計算式
+> **付録:** 延長料金とキャンセル料の計算ルール
 
 ---
 
 ## 概要
 
 EASE Rentalシステムにおける延長料金の計算ルールを定義しています。ピックアップ当日からの日数に応じて、基本料金に一定割合を加算します。
-
-> **参照:** GitHub Issue #26
 
 ---
 
@@ -101,12 +98,12 @@ function calculateDailyRate(basePrice, days) {
 
 ## キャンセル料率
 
-キャンセル料は、**レンタル開始日までの営業日数**（日曜・祝日・年末年始を除外し、**土曜は営業日**として数える・Issue #2163）を基準に決まります。**暦日（カレンダー日）ではない**点に注意してください（例: 日曜・祝日を挟むと、暦日より早く料率が上がる場合があります）。
+キャンセル料は、**レンタル開始日までの営業日数**（日曜・祝日・年末年始を除外し、**土曜は営業日**として数える）を基準に決まります。**暦日（カレンダー日）ではない**点に注意してください（例: 日曜・祝日を挟むと、暦日より早く料率が上がる場合があります）。
 
-**キープ（お申込み確定）時点でキャンセル料の対象**となります（無料キャンセル窓は廃止・仮予約制度も廃止され、仮予約の手動キャンセルも課金対象・Issue #2325）。
+**キープ（お申込み確定）時点でキャンセル料の対象**となります（無料キャンセル窓は廃止・仮予約制度も廃止され、仮予約の手動キャンセルも課金対象）。
 
 :::dev
-> **SSOT:** Backend `src/modules/bookings/booking-totals.service.ts` `calculateCancellationFee()` / 営業日数は `calcCancelDaysBefore()`（Issue #2163） / Frontend `src/lib/utils/fee-calculator.ts`。料率改定は Issue #2325（無料キャンセル窓の廃止・キープ時点で課金・仮予約の手動キャンセルも課金化）。
+> **SSOT:** Backend `src/modules/bookings/booking-totals.service.ts` `calculateCancellationFee()` / 営業日数は `calcCancelDaysBefore()` / Frontend `src/lib/utils/fee-calculator.ts`。
 :::
 
 ### 料率表（商品レンタル料）
@@ -118,7 +115,7 @@ function calculateDailyRate(basePrice, days) {
 | **前日** | **50%** | 基本レンタル料の50% |
 | **当日 / 開始後** | **100%** | 基本レンタル料の全額 |
 
-### 配送キャンセル料（別料率・Issue #719）
+### 配送キャンセル料（別料率）
 
 配送手配後のキャンセルでは、商品レンタル料のキャンセル料とは**別に**配送キャンセル料が発生します。こちらは前日・当日のみ発生し、2日前以前は発生しません。
 
@@ -130,7 +127,7 @@ function calculateDailyRate(basePrice, days) {
 
 #### 配送キャンセル料 計算機
 
-キャンセル日・レンタル開始日・配送料を入力すると、配送キャンセル料が自動計算されます（営業日ベース・#719 料率）。システムの実計算（Backend `calcCancelDaysBefore`・Issue #2163）と同じルールで見積もれます。
+キャンセル日・レンタル開始日・配送料を入力すると、配送キャンセル料が自動計算されます（営業日ベース）。システムの実計算と同じルールで見積もれます。
 
 <div class="cancel-calc">
   <div class="cancel-calc__row">
@@ -205,7 +202,7 @@ function calculateDailyRate(basePrice, days) {
       result.innerHTML = '<span class="cc-warn">配送料は 0 以上の数値で入力してください。</span>';
       return;
     }
-    // #719 delivery rate, counted back from the rental start in business days.
+    // Delivery rate, counted back from the rental start in business days.
     const inclusive = businessDaysInclusive(cancelDate, startDate);
     const diffDays = inclusive - 1 < 0 ? 0 : inclusive - 1;
     let rate, label;
@@ -226,8 +223,8 @@ function calculateDailyRate(basePrice, days) {
 
 ### 計算の対象
 
-- **商品レンタル料:** 商品ごとの `totalPrice`（単価 × 日数）に上記料率を適用
-- **配送料:** 別途、配送キャンセル料として各配送のキャンセル料に料率を適用（商品とは別計算で合算・Issue #719）
+- **商品レンタル料:** 商品ごとのレンタル料（単価 × 日数）に上記料率を適用
+- **配送料:** 別途、配送キャンセル料として各配送のキャンセル料に料率を適用（商品とは別計算で合算）
 - **対象外:** 追加料金・消費税はキャンセル料の計算基準に含まれません
 
 ### 例（基本レンタル料 10,000円の場合）
@@ -249,34 +246,34 @@ function calculateDailyRate(basePrice, days) {
 
 | キャンセルの種類 | 対象 | 商品レンタル料の料率 | 配送料の扱い |
 |---|---|---|---|
-| **伝票全体のキャンセル** | 伝票の全商品 | 全商品に商品料率を適用。「レンタル料を0円にする」選択も可（[#1314](https://github.com/iziz-system/ease-rental-frontend/issues/1314)・**配送料は0円化の対象外**） | まだアクティブ（キャンセルされていない）配送料に **#719 料率（当日100%/前日30%）** を適用して請求額へ折り込み（BE [#2506](https://github.com/iziz-system/ease-rental-backend/issues/2506)）。クレカは DO②で別途回収 |
+| **伝票全体のキャンセル** | 伝票の全商品 | 全商品に商品料率を適用。「レンタル料を0円にする」選択も可（**配送料は0円化の対象外**） | まだ有効（キャンセルされていない）な配送料に **配送キャンセル料率（当日100%/前日30%）** を適用して請求額へ折り込み。クレカは配送料のカード決済で別途回収 |
 | **商品の部分キャンセル** | 伝票の特定商品のみ | キャンセルした商品に商品料率を適用（残商品は影響なし） | 影響なし |
-| **配送のキャンセル** | 配送のみ | 影響なし | キャンセルした配送に配送キャンセル料率（上記「配送キャンセル料」）を適用（クレカは DO⑤・後払い伝票は DO① charges に統合 [#2399](https://github.com/iziz-system/ease-rental-backend/issues/2399)） |
+| **配送のキャンセル** | 配送のみ | 影響なし | キャンセルした配送に配送キャンセル料率（上記「配送キャンセル料」）を適用（クレカは配送キャンセル料のカード決済・後払い伝票は本体分の決済に統合） |
 
 > **ポイント:** 料率は「キャンセルする人」（管理者・顧客）で変わりません。変わるのは**伝票の状態**（仮予約=無料 / 確定済み=課金）と**キャンセルの範囲**（全体・部分・配送のみ）です。
 
-:::note[伝票全体キャンセル時の保護・警告（2026-07改定）]
+:::note[伝票全体キャンセル時の保護・警告（2026年7月改定）]
 伝票全体をキャンセルする際、システムは以下を順に表示・適用します:
-- **キャンセル料の事前警告ダイアログ**（[#2462](https://github.com/iziz-system/ease-rental-backend/issues/2462)）— レンタル開始済み伝票はキャンセル料の概算を事前表示
-- **残アクティブ配送料の警告**（[#1320](https://github.com/iziz-system/ease-rental-frontend/issues/1320)）— まだキャンセルされていない配送がある場合、その配送料にも #719 料率のキャンセル料が発生することを警告
-- **配送キャンセルの全明細確認**（[#1315](https://github.com/iziz-system/ease-rental-frontend/issues/1315)）— 配送キャンセル時、無音で破棄せず全明細キャンセル前に確認警告を表示
-- **レンタル料0円（waive）を選んでも配送料は別途課金** — 配送料は #719 料率で別途回収されるため、0円化の対象外（[#1314](https://github.com/iziz-system/ease-rental-frontend/issues/1314)）
+- **キャンセル料の事前警告ダイアログ** — レンタル開始済み伝票はキャンセル料の概算を事前表示
+- **残配送料の警告** — まだキャンセルされていない配送がある場合、その配送料にもキャンセル料が発生することを警告
+- **配送キャンセルの全明細確認** — 配送キャンセル時、確認なしで破棄せず全明細キャンセル前に確認警告を表示
+- **レンタル料0円を選んでも配送料は別途課金** — 配送料はキャンセル料率で別途回収されるため、0円化の対象外
 :::
 
 ### 伝票の状態による無料・課金の区別
 
 | 伝票の状態 | キャンセル経路 | キャンセル料 |
 |---|---|---|
-| **仮予約（DRAFT）** — カート確定前・未確定 | 顧客マイページからキャンセル | **無料**（[#2379](https://github.com/iziz-system/ease-rental-backend/issues/2379) DRAFT skip・未確定のため） |
-| **仮予約（TENTATIVE）** — 管理画面で手動作成した仮押さえ | スタッフが手動キャンセル | **課金対象**（[#2325](https://github.com/iziz-system/ease-rental-backend/issues/2325)・キープ時点で課金） |
-| **確定予約（CONFIRMED）以降** | スタッフ経由でキャンセル | **課金対象**（本マニュアルの料率表どおり） |
+| **仮予約（カート確定前・未確定）** | 顧客マイページからキャンセル | **無料**（未確定のため） |
+| **仮予約（管理画面で手動作成した仮押さえ）** | スタッフが手動キャンセル | **課金対象**（キープ時点で課金） |
+| **確定予約以降** | スタッフ経由でキャンセル | **課金対象**（本マニュアルの料率表どおり） |
 
 :::dev
-> **#2379（顧客セルフ全件キャンセル・#2307 gap クローズ）:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（仮予約）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。
-> **#2307:** 部分キャンセルのキャンセル料を後払い伝票の charges に計上（`cancelBookingItem` cascade 含む）。
-> **#2399:** 配送キャンセル料を後払い伝票の DO① charges に統合（伝票1:領収書1の回復・クレカは引き続き DO⑤）。
-> **#2404:** DO③↔DO① 二重請求の三層防御（settlement gate + swap CAS + active-billing 交差 fail-closed）。顧客セルフキャンセルは DO③ PENDING 行を `cancelOutstandingBillings` で cleanup し、同防御と整合。
-> **SSOT:** `calculateCancellationFee`（`booking-totals.service.ts`）+ `applyCancellationSideEffects`（util・8 caller）+ `recalculate`。配送キャンセル料は `deliveries.cancellation_fee`（#2113 SSOT）。
+> **顧客セルフキャンセル:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（仮予約）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。
+> **部分キャンセル:** キャンセル料を後払い伝票の charges に計上（`cancelBookingItem` cascade 含む）。
+> **配送キャンセル料の統合:** 後払い伝票は本体分の決済（①）charges に統合（伝票1:領収書1の回復・クレカは引き続き⑤）。
+> **二重請求の三層防御**（settlement gate + swap CAS + active-billing 交差 fail-closed）。顧客セルフキャンセルは追加料金③の未決済行を cleanup し、同防御と整合。
+> **SSOT:** `calculateCancellationFee`（`booking-totals.service.ts`）+ `applyCancellationSideEffects`（util・8 caller）+ `recalculate`。配送キャンセル料は `deliveries.cancellation_fee`。
 :::
 
 ---
@@ -304,7 +301,7 @@ function calculateDailyRate(basePrice, days) {
    - 返却日は含まない（返却日前日までの日数）
 
 2. **端数処理**（用途別に異なります — すべて切り捨てではありません）
-   - **消費税**: 切捨て（`ROUND_FLOOR`・Issue #2049）
+   - **消費税**: 切捨て（`ROUND_FLOOR`）
    - **配送料マスタ**: 四捨五入（`ROUND_HALF_UP`）
    - **段階料金（tiered pricing）**: `Decimal.round()`
    - **キャンセル料**: 整数に四捨五入（`toDecimalPlaces(0, HALF_UP)`）

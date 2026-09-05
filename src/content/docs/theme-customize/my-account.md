@@ -24,7 +24,7 @@ sidebar:
 
 | ページ | テンプレート | 役割 |
 |--------|------------|------|
-| アカウント画面 | `customers/account.json` | 6タブ構成（貸出予定 / 未払い / 全履歴 / 配送先管理 / 請求先管理 / アカウント詳細・Issue #605） |
+| アカウント画面 | `customers/account.json` | 6タブ構成（貸出予定 / 未払い / 全履歴 / 配送先管理 / 請求先管理 / アカウント詳細） |
 | 注文詳細 | `customers/order.json` | 個別注文の詳細 |
 | 住所一覧 | `customers/addresses.json` | 住所管理（1件制・実住所≥1件で追加ボタンと新規フォーム非表示・「住所の登録は1件までです」の案内）。※配送先(5件)・請求先(15件)は別系統で対象外 |
 | ログイン | `customers/login.json` | ログインフォーム |
@@ -37,12 +37,12 @@ sidebar:
 
 | セクション | 説明 |
 |-----------|------|
-| `main-account` | アカウント画面（6タブ構成・Issue #605）。タブ内で各 snippet を `render`: `customer-rental-bookings`（貸出予定/全履歴）・`customer-unpaid-fees`（未払い）・`customer-account-shipping`（配送先管理）・`customer-account-billing`（請求先管理）・`customer-account-profile`（アカウント詳細）※これらは snippet であり section ではない |
+| `main-account` | アカウント画面（6タブ構成）。タブ内で各 snippet を `render`: `customer-rental-bookings`（貸出予定/全履歴）・`customer-unpaid-fees`（未払い）・`customer-account-shipping`（配送先管理）・`customer-account-billing`（請求先管理）・`customer-account-profile`（アカウント詳細）※これらは snippet であり section ではない |
 | `main-order` | 注文詳細 |
 | `main-addresses` | 住所管理 |
 | `main-login` | ログインフォーム |
 | `main-register` | 新規登録フォーム |
-| `main-rental-edit` | レンタル予約内容の変更（商品の期間変更・削除・キャンセル料試算・Issue #2259 / Theme #569） |
+| `main-rental-edit` | レンタル予約内容の変更（商品の期間変更・削除・キャンセル料試算・ / ） |
 
 ---
 

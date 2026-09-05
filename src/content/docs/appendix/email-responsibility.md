@@ -6,7 +6,7 @@ sidebar:
 tableOfContents: false
 ---
 
-> **💡 運用者向け:** EASE Rental のメールは Shopify と Backend で役割が分かれて送信されます（注文確認は Shopify、リマインダー・督促・自動キャンセル通知は Backend）。システム間の責任分界・送信ロジックの技術詳細は開発者モード（ページ右上のトグル）を ON にしてご確認ください。
+> **💡 運用者向け:** EASE Rental のメールは Shopify と EASE Rental システムで役割が分かれて送信されます（注文確認は Shopify、リマインダー・督促・自動キャンセル通知は Backend）。システム間の責任分界・送信ロジックの技術詳細は開発者モード（ページ右上のトグル）を ON にしてご確認ください。
 
 :::dev
 
