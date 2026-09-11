@@ -7,9 +7,6 @@ sidebar:
 
 
 :::dev
-> ⚠️ **現在非表示** — サイドバーに表示されていません。直接URL `/aggregate-report` でアクセス可能です。
-> **復活条件:** Backend レポートAPI整備時
-
 > **パス:** `/aggregate-report`
 > **メニュー:** レポート > 集計表出力
 :::

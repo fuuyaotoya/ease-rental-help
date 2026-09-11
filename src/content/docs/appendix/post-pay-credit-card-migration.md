@@ -86,14 +86,14 @@ sidebar:
 ### 仕様（7/23 A項）
 
 - **前日まで**: お客様は商品の出し入れ（追加/削除）可能
-- **前日**: 請求書発行 → 伝票close → 以降の追加は別伝票
+- **前日**: 決済リンク付きメール送信（請求書PDFは発行しない・#2408 revert）→ 伝票close → 以降の追加は別伝票
 - **当日キャンセル**: システム上不可（伝票close済）。電話・メールの手動対応のみ
-- **店頭受取も同ルール**（ただし**店頭現金払いは対象外**）
-- **送信時刻**: 18:00 JST（env `DEFERRED_CC_INITIAL_INVOICE_CRON` で上書き可能）
+- **店頭受取も同ルール**（ただし**店頭現金払いは対象外**）。配送ありは「前日請求」をセットした伝票が対象
+- **送信時刻**: 19:00 JST（#2535・env `DEFERRED_CC_INITIAL_INVOICE_CRON` で上書き可能）
 
 ### 実装
 
-- **cron**: `DeferredCcInitialInvoiceCronService`（`schedule/`・毎日18:00 JST）・predicate: `start_date=明日` × pickup × CC × 後払い(pay_now=false) × DO①OPEN × 未確定
+- **cron**: `DeferredCcInitialInvoiceCronService`（`schedule/`・毎日19:00 JST）・predicate: `start_date=明日` × CC × 後払い(pay_now=false) × DO①OPEN × 未確定 × (pickup または 前日請求セット済み)
 - **コア**: `confirmAmountForDeferredCreditCard`（pickup 専用・全額一本・配送料折込なし）
 - **例外**: 初回即時入金希望等は手動EP `POST :id/confirm-amount-deferred-cc` で対応
 - **キャンセルblock**: `updateStatusFromCustomer` CANCELLED 分岐に `shipping_fee_amount_confirmed_at` gate（伝票close後の顧客自己キャンセル拒否）
