@@ -267,6 +267,7 @@ function calculateDailyRate(basePrice, days) {
 | **仮予約（カート確定前・未確定）** | 顧客マイページからキャンセル | **無料**（未確定のため） |
 | **仮予約（管理画面で手動作成した仮押さえ）** | スタッフが手動キャンセル | **課金対象**（キープ時点で課金） |
 | **確定予約以降** | スタッフ経由でキャンセル | **課金対象**（本マニュアルの料率表どおり） |
+| **[社内確保](/internal-hold/)** | スタッフが手動キャンセル | **無料**（常に0円。明細・配送・伝票のどの単位でも0円で、PDFの明細行も0円で印字されます） |
 
 :::dev
 > **顧客セルフキャンセル:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（仮予約）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。

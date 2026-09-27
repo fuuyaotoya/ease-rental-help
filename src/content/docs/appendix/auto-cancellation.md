@@ -47,6 +47,7 @@ Shopify テーマ経由（カート）で作成された予約のうち、決済
 | **確定予約の銀行振込**（`銀行振込可`タグ保有 or `payment_method=bank_transfer`）| 入金まで時間がかかるため、支払期限系 cron ①③から除外。キャンセルはスタッフ手動のみ | #1944（#1319 で誤削除→復活）|
 | **後払い伝票**（deferred-checkout：クレカ×配送 or クレカ×pickup×`pay_now=false`）| 返却後に決済するため、①②の自動キャンセルから除外。督促メールも skip | #2284/#2330 |
 | **管理画面の仮予約**（`source=backend_app`・`confirm_status=TENTATIVE`）| ①③は `source:{not:'backend_app'}` で元々到達しない。仮予約失効 cron（旧 `tentative-reservation-cleanup`）は #2072/#2073 で**廃止**（スタッフ手動キャンセルのみ・`tentative_expires_at` も付与しない）| #2072/#2073 |
+| **社内確保**（`booking_type=internal_hold`・[詳細](/internal-hold/)）| 支払いを前提としない在庫確保用の種別のため対象外。出荷しないまま期間が過ぎた伝票は、毎日早朝の自動処理が期限切れ分を自動「**完了**」させる（自動キャンセルではない）| #3030 |
 | 既に AMOUNT_CONFIRMED / COMPLETED の伝票 | キャンセル対象ステータスではない | — |
 | Shopify Draft Order が expire していない | webhook が発火しない | — |
 

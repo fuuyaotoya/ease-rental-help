@@ -54,6 +54,7 @@ export default defineConfig({
           items: [
             { label: '貸し出し伝票作成', slug: 'booking-compact' },
             { label: '伝票検索', slug: 'slip-search' },
+            { label: '社内確保の伝票', slug: 'internal-hold' },
           ],
         },
         {
