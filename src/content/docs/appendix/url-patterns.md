@@ -180,9 +180,9 @@ PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 
 ### 管理者向け
 
-1. `/` - ダッシュボード（⚠️ 現在非表示）
+1. `/` - ダッシュボード（サイドバーに表示中）
 2. `/bulk-invoices` - 一括請求処理
-3. `/aggregate-report` - 集計レポート（⚠️ 現在非表示）
+3. `/aggregate-report` - 集計レポート（サイドバーに表示中）
 4. `/invoices-list` - 請求書一覧
 
 ---
