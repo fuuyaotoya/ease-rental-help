@@ -49,6 +49,7 @@ export default defineConfig({
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
       sidebar: [
         { label: '業務フロー全体', slug: 'overview' },
+        { label: '移行期間中の運用（@Suite併用）', slug: 'migration-period' },
         {
           label: '受注・伝票',
           items: [
