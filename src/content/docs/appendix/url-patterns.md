@@ -25,7 +25,7 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 | -------------------------------- | ------------------------ | -------------------- |
 | `/booking-compact`               | 新規伝票作成（初期状態） | 通常の伝票作成開始   |
 | `/booking-compact?product={sku}` | 商品を指定して伝票作成   | 商品ページからの遷移 |
-| `/booking-compact?customer={id}` | 顧客を指定して伝票作成   | 顧客ページからの遷移 |
+| `/booking-compact?customer_id={id}` | 顧客を指定して伝票作成   | 顧客ページからの遷移 |
 | `/booking-compact?id={id}` | 既存伝票を編集モードで開く | 伝票詳細からの直接遷移・旧URL `/bookings/{id}` からのリダイレクト |
 
 ### 伝票検索
@@ -34,40 +34,37 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 | ------------------------------ | -------------------- | ------------------ |
 | `/slip-search`                 | 伝票検索（初期状態） | 全伝票から検索     |
 | `/slip-search?status={status}` | ステータスでフィルタ | 特定状態の伝票一覧 |
-| `/slip-search?customer={name}` | 顧客名でフィルタ     | 特定顧客の伝票検索 |
 
-### 予約確認
 
-| URL                                            | 説明               | 使用場面           |
-| ---------------------------------------------- | ------------------ | ------------------ |
+顧客名は伝票検索画面の検索条件に入力します。
 
 ### 出荷・配送
 
 | URL                                | 説明                 | 使用場面             |
 | ---------------------------------- | -------------------- | -------------------- |
 | `/picking-delivery`                | ピッキング・出荷登録 | 出荷作業             |
-| `/picking-delivery?status=pending` | ピッキング待ち一覧   | 優先出荷確認         |
 | `/delivery-list`                   | 配送一覧             | 配送スケジュール確認 |
-| `/delivery-list?date={yyyy-mm-dd}` | 特定日の配送一覧     | 当日配送確認         |
+| `/delivery-list?deliveryDate={yyyy-mm-dd}` | 特定日の配送一覧     | 当日配送確認         |
+
+ピッキング・出荷の絞り込みは、画面を開いて画面内の検索条件で行います。
 
 ### 返却・金額確定
 
 | URL                                  | 説明           | 使用場面         |
 | ------------------------------------ | -------------- | ---------------- |
 | `/bookings-return`                   | 返却処理トップ | 返却作業開始     |
-| `/bookings-return?status=in_transit` | 返却待ち一覧   | 返却予定伝票確認 |
+| `/bookings-return` | 返却待ち一覧   | 返却予定伝票確認 |
 
 ### 請求・入金
 
 | URL                                  | 説明                 | 使用場面         |
 | ------------------------------------ | -------------------- | ---------------- |
-| `/invoice/create-new`                | 新規請求書作成       | 個別請求書作成   |
-| `/invoice/create-new?booking={id}`   | 伝票指定で請求書作成 | 特定伝票の請求書 |
 | `/invoices-list`                     | 請求書一覧           | 請求管理         |
 | `/invoices-list?status=sent`         | 未入金請求書一覧     | 入金催促対象確認 |
 | `/payment-management`                | 未入金一覧           | 入金処理         |
-| `/payment-management?status=overdue` | 延滞一覧             | 延滞対応         |
 | `/bulk-invoices`                     | 一括請求処理         | 月次処理         |
+
+請求書は金額確定時の自動発行、または[会社まとめ請求](/consolidated-invoices/)で発行します。未入金一覧の絞り込みは、画面を開いて画面内の検索条件で行います。
 
 ---
 
@@ -98,11 +95,11 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 | URL                       | 説明              | 対象ユーザー |
 | ------------------------- | ----------------- | ------------ |
 | `/products`               | 商品管理          | 管理者       |
-| `/webhook-receiving`      | Webhook受信ログ   | 管理者       |
+| `/webhook-receiving`      | Webhook受信       | 管理者       |
 | `/my-page`                | マイページ        | 全ユーザー   |
 
 :::dev
-##### 開発者向け（Shopifyデータ管理）
+### 開発者向け（Shopifyデータ管理）
 
 | URL                       | 説明              |
 | ------------------------- | ----------------- |
@@ -116,45 +113,45 @@ EASE Rentalシステムでよく使用されるURLパターンをまとめてい
 ## URLパターンの詳細
 
 :::dev
-##### ステータス値
+### ステータス値
 
 URLパラメータで使用するステータス値の一覧です。
 
-###### BookingStatus
+#### BookingStatus
 
 ```
 PROCESSING, BILLING_PENDING, PAYMENT_PENDING, COMPLETED, CANCELLED
 ```
 
-###### PaymentStatus
+#### PaymentStatus
 
 ```
 UNPAID, PARTIAL, PAID, REFUNDED, CANCELLED
 ```
 
-###### InvoiceStatus
+#### InvoiceStatus
 
 ```
 DRAFT, CONFIRMED, SENT, PAID, REFUNDED, CANCELLED
 ```
 
-###### ShippingStatus
+#### ShippingStatus
 
 ```
 PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 ```
 
-##### 日付フォーマット
+### 日付フォーマット
 
 日付パラメータは ISO 8601 形式（YYYY-MM-DD）を使用します。
 
 ```
-正: ?date=2026-02-21
-誤: ?date=2026/02/21
-誤: ?date=02-21-2026
+正: ?deliveryDate=2026-02-21
+誤: ?deliveryDate=2026/02/21
+誤: ?deliveryDate=02-21-2026
 ```
 
-##### 複数値の指定
+### 複数値の指定
 
 カンマ区切りで複数の値を指定できる場合があります。
 
@@ -189,6 +186,6 @@ PENDING, PREPARING, IN_TRANSIT, DELIVERED, CANCELLED
 
 ## 関連資料
 
-- [ステータス遷移図](appendix_a_status-flow.md)
-- [延長料金計算ルール](appendix_b_fee-calculation.md)
-- [マニュアル目次](00_index.md)
+- [ステータス遷移図](/appendix/status-flow/)
+- [延長料金計算ルール](/appendix/fee-calculation/)
+- [マニュアル目次](/)

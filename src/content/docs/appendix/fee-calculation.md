@@ -100,7 +100,7 @@ function calculateDailyRate(basePrice, days) {
 
 キャンセル料は、**レンタル開始日までの営業日数**（日曜・祝日・年末年始を除外し、**土曜は営業日**として数える）を基準に決まります。**暦日（カレンダー日）ではない**点に注意してください（例: 日曜・祝日を挟むと、暦日より早く料率が上がる場合があります）。
 
-**キープ（お申込み確定）時点でキャンセル料の対象**となります（無料キャンセル窓は廃止・仮予約制度も廃止され、仮予約の手動キャンセルも課金対象）。
+**キープ（お申込み確定）時点でキャンセル料の対象**となります（無料キャンセル窓は廃止）。**仮予約は現在も使用できます。ただし、スタッフが手動でキャンセルする場合もキャンセル料の対象です。**
 
 :::dev
 > **SSOT:** Backend `src/modules/bookings/booking-totals.service.ts` `calculateCancellationFee()` / 営業日数は `calcCancelDaysBefore()` / Frontend `src/lib/utils/fee-calculator.ts`。
@@ -250,7 +250,7 @@ function calculateDailyRate(basePrice, days) {
 | **商品の部分キャンセル** | 伝票の特定商品のみ | キャンセルした商品に商品料率を適用（残商品は影響なし） | 影響なし |
 | **配送のキャンセル** | 配送のみ | 影響なし | キャンセルした配送に配送キャンセル料率（上記「配送キャンセル料」）を適用（クレカは配送キャンセル料のカード決済・後払い伝票は本体分の決済に統合） |
 
-> **ポイント:** 料率は「キャンセルする人」（管理者・顧客）で変わりません。変わるのは**伝票の状態**（仮予約=無料 / 確定済み=課金）と**キャンセルの範囲**（全体・部分・配送のみ）です。
+> **ポイント:** キャンセル料は、**伝票の状態**と**キャンセルの範囲・経路**によって異なります。店舗で仮押さえした仮予約をスタッフが手動でキャンセルする場合は、課金対象です。
 
 :::note[伝票全体キャンセル時の保護・警告（2026年7月改定）]
 伝票全体をキャンセルする際、システムは以下を順に表示・適用します:
@@ -264,13 +264,13 @@ function calculateDailyRate(basePrice, days) {
 
 | 伝票の状態 | キャンセル経路 | キャンセル料 |
 |---|---|---|
-| **仮予約（カート確定前・未確定）** | 顧客マイページからキャンセル | **無料**（未確定のため） |
+| **未確定（カート確定前）** | 顧客マイページからキャンセル | **無料**（未確定のため） |
 | **仮予約（管理画面で手動作成した仮押さえ）** | スタッフが手動キャンセル | **課金対象**（キープ時点で課金） |
 | **確定予約以降** | スタッフ経由でキャンセル | **課金対象**（本マニュアルの料率表どおり） |
 | **[社内確保](/internal-hold/)** | スタッフが手動キャンセル | **無料**（常に0円。明細・配送・伝票のどの単位でも0円で、PDFの明細行も0円で印字されます） |
 
 :::dev
-> **顧客セルフキャンセル:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（仮予約）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。
+> **顧客セルフキャンセル:** BE `updateStatusFromCustomer` → `cancelBookingFromCustomer`（cancelBooking サブセット tx）。`DRAFT`（未確定）はキャンセル料を skip（無料）。`CONFIRMED`（確定済み）は per-item `calculateCancellationFee` + `applyCancellationSideEffects` + `recalculate` でキャンセル料を計上（cancelBooking と対称・ただし Shopify 返金 warning・手動メールは skip）。
 > **部分キャンセル:** キャンセル料を後払い伝票の charges に計上（`cancelBookingItem` cascade 含む）。
 > **配送キャンセル料の統合:** 後払い伝票は本体分の決済（①）charges に統合（伝票1:領収書1の回復・クレカは引き続き⑤）。
 > **二重請求の三層防御**（settlement gate + swap CAS + active-billing 交差 fail-closed）。顧客セルフキャンセルは追加料金③の未決済行を cleanup し、同防御と整合。
